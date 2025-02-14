@@ -224,11 +224,16 @@ body {
     cursor: pointer;
     user-select: none;
     z-index: 90;
+    will-change: transform, opacity;
     transition: transform 0.2s, opacity 0.2s;
 }
 
 .falling-heart:hover {
     transform: scale(1.2);
+}
+
+.falling-heart:active {
+    transform: scale(0.9);
 }
 
 #score {

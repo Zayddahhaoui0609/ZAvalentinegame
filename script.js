@@ -1020,79 +1020,58 @@ function startHeartCatcher() {
         heart.className = 'falling-heart';
         heart.innerHTML = '❤️';
         
-        // Set initial position
-        const containerWidth = gameContainer.offsetWidth;
-        const heartWidth = 40; // Approximate width of the heart emoji
-        const randomX = Math.random() * (containerWidth - heartWidth);
+        // Random position
+        const randomX = Math.random() * (gameContainer.offsetWidth - 40);
         heart.style.left = randomX + 'px';
         heart.style.top = '-50px';
         
-        // Add click handler to the heart
-        heart.addEventListener('click', function(e) {
-            // Prevent the click from affecting other elements
-            e.stopPropagation();
-            
-            // Update score
+        // Click handler
+        heart.addEventListener('click', () => {
             updateScore();
-            
-            // Play sound
             if (sounds.pop) sounds.pop.play();
             
-            // Remove heart with animation
+            // Remove with animation
             heart.style.transform = 'scale(1.5)';
             heart.style.opacity = '0';
-            setTimeout(() => {
-                heart.remove();
-                const index = games.heartCatcher.hearts.indexOf(heart);
-                if (index > -1) {
-                    games.heartCatcher.hearts.splice(index, 1);
-                }
-            }, 200);
+            setTimeout(() => heart.remove(), 200);
         });
         
         gameContainer.appendChild(heart);
-        games.heartCatcher.hearts.push(heart);
-
-        // Start falling animation
-        let topPosition = -50;
-        const fallInterval = setInterval(() => {
-            if (!games.heartCatcher.active) {
-                clearInterval(fallInterval);
-                return;
-            }
-
-            topPosition += 2;
-            heart.style.top = topPosition + 'px';
-
-            // Remove heart if it goes off screen
-            if (topPosition > gameContainer.offsetHeight) {
+        
+        // Animate falling
+        let pos = -50;
+        const speed = 2;
+        
+        function fall() {
+            if (!games.heartCatcher.active) return;
+            
+            pos += speed;
+            heart.style.top = pos + 'px';
+            
+            if (pos < gameContainer.offsetHeight) {
+                requestAnimationFrame(fall);
+            } else {
                 heart.remove();
-                const index = games.heartCatcher.hearts.indexOf(heart);
-                if (index > -1) {
-                    games.heartCatcher.hearts.splice(index, 1);
-                }
-                clearInterval(fallInterval);
             }
-        }, 16);
+        }
+        
+        requestAnimationFrame(fall);
     }
 
-    // Create hearts periodically
-    const createHeartInterval = setInterval(() => {
-        if (!games.heartCatcher.active) {
-            clearInterval(createHeartInterval);
-            return;
-        }
-
-        if (Math.random() < 0.1) {
-            createHeart();
-        }
-    }, 500);
+    // Create hearts every second
+    function spawnHeart() {
+        if (!games.heartCatcher.active) return;
+        createHeart();
+        setTimeout(spawnHeart, 1000);
+    }
+    
+    spawnHeart();
 
     // Cleanup function
     return () => {
         games.heartCatcher.active = false;
-        games.heartCatcher.hearts.forEach(heart => heart.remove());
-        games.heartCatcher.hearts = [];
+        const hearts = document.querySelectorAll('.falling-heart');
+        hearts.forEach(heart => heart.remove());
     };
 }
 
@@ -1167,7 +1146,7 @@ function startGame() {
         position += fallSpeed;
         heart.style.top = position + 'px';
         
-        // Remove heart if it reaches bottom
+        // Remove heart if it goes off screen
         if (position > gameContainer.offsetHeight) {
             heart.remove();
             clearInterval(fallInterval);

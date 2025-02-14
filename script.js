@@ -1,3 +1,6 @@
+// Initialize audio context
+let audioContext;
+
 // Sound effects and Music Player
 const sounds = {
     pop: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-modern-technology-select-3124.mp3')
@@ -21,12 +24,24 @@ let currentMusicIndex = 0;
 let currentMusic = null;
 let isMusicPlaying = false;
 
-// Function to get song name from URL
-function getSongName(url) {
-    return decodeURIComponent(url.split('/').pop().replace('.mp3', ''));
+// Function to initialize audio context
+function initAudioContext() {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioContext.state === 'suspended') {
+            audioContext.resume();
+        }
+    }
 }
 
-// Function to update the current song display
+// Function to get song name from URL
+function getSongName(url) {
+    const decodedUrl = decodeURIComponent(url);
+    const fileName = decodedUrl.split('/').pop();
+    return fileName.split('?')[0].replace('.mp3', '');
+}
+
+// Function to update current song display
 function updateCurrentSongDisplay() {
     const songName = getSongName(musicPlaylist[currentMusicIndex]);
     document.getElementById('currentSong').textContent = songName;
@@ -42,37 +57,47 @@ function updateProgressBar() {
 }
 
 // Function to play a song
-function playSong() {
-    if (currentMusic) {
-        currentMusic.pause();
-        currentMusic = null;
-    }
+async function playSong() {
+    try {
+        initAudioContext();
+        
+        if (currentMusic) {
+            currentMusic.pause();
+            currentMusic = null;
+        }
 
-    const song = musicPlaylist[currentMusicIndex];
-    console.log('Attempting to play:', song);
+        const song = musicPlaylist[currentMusicIndex];
+        console.log('Attempting to play:', song);
 
-    currentMusic = new Audio(song);
-    
-    currentMusic.addEventListener('loadeddata', () => {
-        currentMusic.play()
-            .then(() => {
-                isMusicPlaying = true;
-                document.getElementById('playBtn').textContent = '⏸️';
-                updateCurrentSongDisplay();
-                updateProgressBar();
-            })
-            .catch(error => {
-                console.error('Error playing song:', error);
-                setTimeout(playNextSong, 2000);
-            });
-    });
+        currentMusic = new Audio(song);
+        
+        // Add error handling
+        currentMusic.onerror = (e) => {
+            console.error('Error loading song:', song, e.target.error);
+            setTimeout(playNextSong, 2000);
+        };
 
-    currentMusic.addEventListener('error', () => {
-        console.error('Error loading song:', song);
+        // Wait for the audio to be loaded
+        await new Promise((resolve, reject) => {
+            currentMusic.addEventListener('canplaythrough', resolve, { once: true });
+            currentMusic.addEventListener('error', reject, { once: true });
+            currentMusic.load();
+        });
+
+        // Play the audio
+        await currentMusic.play();
+        isMusicPlaying = true;
+        document.getElementById('playBtn').textContent = '⏸️';
+        updateCurrentSongDisplay();
+        updateProgressBar();
+
+        // Add ended event listener
+        currentMusic.addEventListener('ended', playNextSong);
+
+    } catch (error) {
+        console.error('Error playing song:', error);
         setTimeout(playNextSong, 2000);
-    });
-
-    currentMusic.addEventListener('ended', playNextSong);
+    }
 }
 
 // Initialize music player

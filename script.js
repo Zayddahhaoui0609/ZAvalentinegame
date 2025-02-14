@@ -6,25 +6,73 @@ const sounds = {
     })
 };
 
-// Music playlist with base URL
-const baseUrl = 'https://zayddahhaoui0609.github.io/ZAvalentinegame';
+// Music playlist with relative paths
 const musicPlaylist = [
-    "/Music/Bill Withers  - Just The Two Of Us (Lyrics).mp3",
-    "/Music/Joji -  Glimpse of Us.mp3",
-    "/Music/Joji - Like You Do.mp3",
-    "/Music/Lady Gaga, Bruno Mars - Die With A Smile (Official Music Video).mp3",
-    "/Music/Rex Orange County - Loving is Easy (feat. Benny Sings) [Official Video].mp3",
-    "/Music/SZA - Snooze (Official Video).mp3",
-    "/Music/SZA - The Weekend (Official Audio).mp3",
-    "/Music/Stephen Sanchez - Until I Found You (Official Music Video).mp3",
-    "/Music/The Weeknd - Die For You (Official Music Video).mp3",
-    "/Music/d4vd - Here With Me [Official Music Video].mp3",
-    "/Music/d4vd - Romantic Homicide.mp3"
-].map(path => `${baseUrl}${path}`);
+    "Music/Bill Withers  - Just The Two Of Us (Lyrics).mp3",
+    "Music/Joji -  Glimpse of Us.mp3",
+    "Music/Joji - Like You Do.mp3",
+    "Music/Lady Gaga, Bruno Mars - Die With A Smile (Official Music Video).mp3",
+    "Music/Rex Orange County - Loving is Easy (feat. Benny Sings) [Official Video].mp3",
+    "Music/SZA - Snooze (Official Video).mp3",
+    "Music/SZA - The Weekend (Official Audio).mp3",
+    "Music/Stephen Sanchez - Until I Found You (Official Music Video).mp3",
+    "Music/The Weeknd - Die For You (Official Music Video).mp3",
+    "Music/d4vd - Here With Me [Official Music Video].mp3",
+    "Music/d4vd - Romantic Homicide.mp3"
+];
 
 let currentMusicIndex = 0;
 let currentMusic = null;
 let isMusicPlaying = false;
+
+// Function to play a song with error handling
+function playSong() {
+    if (currentMusic) {
+        currentMusic.unload();
+    }
+
+    const song = musicPlaylist[currentMusicIndex];
+    console.log('Attempting to play:', song); // Debug log
+
+    currentMusic = new Howl({
+        src: [song],
+        html5: true,
+        format: ['mp3'],
+        onplay: function() {
+            isMusicPlaying = true;
+            document.getElementById('playBtn').textContent = '⏸️';
+            updateCurrentSongDisplay();
+        },
+        onpause: function() {
+            isMusicPlaying = false;
+            document.getElementById('playBtn').textContent = '▶️';
+        },
+        onend: function() {
+            playNextSong();
+        },
+        onloaderror: function(id, err) {
+            console.error('Error loading song:', song, err);
+            document.getElementById('currentSong').textContent = 'Error loading song: ' + song.split('/').pop();
+            // Try next song on error after 2 seconds
+            setTimeout(playNextSong, 2000);
+        },
+        onplayerror: function(id, err) {
+            console.error('Error playing song:', song, err);
+            document.getElementById('currentSong').textContent = 'Error playing song: ' + song.split('/').pop();
+            // Try next song on error after 2 seconds
+            setTimeout(playNextSong, 2000);
+        }
+    });
+
+    try {
+        currentMusic.play();
+        updateProgressBar();
+    } catch (error) {
+        console.error('Error in playSong:', error);
+        // Try next song on error after 2 seconds
+        setTimeout(playNextSong, 2000);
+    }
+}
 
 // Initialize music player
 function initMusicPlayer() {
@@ -119,61 +167,6 @@ function toggleMusic() {
         isMusicPlaying = !isMusicPlaying;
     }
     updateCurrentSongDisplay();
-}
-
-// Function to play a song with error handling
-function playSong() {
-    if (currentMusic) {
-        currentMusic.unload();
-    }
-
-    const song = musicPlaylist[currentMusicIndex];
-    console.log('Attempting to play:', song); // Debug log
-
-    currentMusic = new Howl({
-        src: [song],
-        html5: true,
-        format: ['mp3'],
-        xhr: {
-            method: 'GET',
-            headers: {
-                'Origin': baseUrl
-            }
-        },
-        onplay: function() {
-            isMusicPlaying = true;
-            document.getElementById('playBtn').textContent = '⏸️';
-            updateCurrentSongDisplay();
-        },
-        onpause: function() {
-            isMusicPlaying = false;
-            document.getElementById('playBtn').textContent = '▶️';
-        },
-        onend: function() {
-            playNextSong();
-        },
-        onloaderror: function(id, err) {
-            console.error('Error loading song:', song, err);
-            document.getElementById('currentSong').textContent = 'Error loading song: ' + song.split('/').pop();
-            // Try next song on error
-            setTimeout(playNextSong, 2000);
-        },
-        onplayerror: function(id, err) {
-            console.error('Error playing song:', song, err);
-            document.getElementById('currentSong').textContent = 'Error playing song: ' + song.split('/').pop();
-            // Try next song on error
-            setTimeout(playNextSong, 2000);
-        }
-    });
-
-    try {
-        currentMusic.play();
-        updateProgressBar();
-    } catch (error) {
-        console.error('Error in playSong:', error);
-        // Try next song on error
-        setTimeout(playNextSong, 2000);
-    }
 }
 
 function playNextSong() {

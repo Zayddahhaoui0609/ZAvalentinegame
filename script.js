@@ -1015,37 +1015,60 @@ function startHeartCatcher() {
     player.style.left = '200px';
     player.style.bottom = '20px';
 
-    // Dragging variables
-    let isMouseDown = false;
-    let mouseX;
-    let playerLeft;
+    // Dragging functionality
+    let isDragging = false;
+    let currentX;
+    let initialX;
+    let xOffset = 0;
 
-    // Mouse down event on player
-    player.addEventListener('mousedown', function(e) {
-        isMouseDown = true;
-        mouseX = e.clientX;
-        playerLeft = player.offsetLeft;
-    });
+    function dragStart(e) {
+        if (e.type === "mousedown") {
+            initialX = e.clientX - xOffset;
+        } else {
+            initialX = e.touches[0].clientX - xOffset;
+        }
+        
+        if (e.target === player) {
+            isDragging = true;
+        }
+    }
 
-    // Mouse move event on document
-    document.addEventListener('mousemove', function(e) {
-        if (!isMouseDown) return;
-        
-        const deltaX = e.clientX - mouseX;
-        let newLeft = playerLeft + deltaX;
-        
-        // Keep within bounds
-        const maxLeft = gameContainer.offsetWidth - player.offsetWidth;
-        if (newLeft < 0) newLeft = 0;
-        if (newLeft > maxLeft) newLeft = maxLeft;
-        
-        player.style.left = newLeft + 'px';
-    });
+    function dragEnd(e) {
+        initialX = currentX;
+        isDragging = false;
+    }
 
-    // Mouse up event on document
-    document.addEventListener('mouseup', function() {
-        isMouseDown = false;
-    });
+    function drag(e) {
+        if (isDragging) {
+            e.preventDefault();
+            
+            if (e.type === "mousemove") {
+                currentX = e.clientX - initialX;
+            } else {
+                currentX = e.touches[0].clientX - initialX;
+            }
+
+            xOffset = currentX;
+            
+            // Keep player within bounds
+            const containerRect = gameContainer.getBoundingClientRect();
+            const playerRect = player.getBoundingClientRect();
+            const maxX = containerRect.width - playerRect.width;
+            
+            let newX = Math.min(Math.max(currentX, 0), maxX);
+            player.style.left = newX + 'px';
+        }
+    }
+
+    // Mouse Events
+    player.addEventListener('mousedown', dragStart, false);
+    document.addEventListener('mousemove', drag, false);
+    document.addEventListener('mouseup', dragEnd, false);
+
+    // Touch Events
+    player.addEventListener('touchstart', dragStart, false);
+    document.addEventListener('touchmove', drag, false);
+    document.addEventListener('touchend', dragEnd, false);
 
     // Game loop
     const gameLoop = setInterval(() => {
@@ -1065,16 +1088,18 @@ function startHeartCatcher() {
             games.heartCatcher.hearts.push(heart);
         }
         
-        // Move hearts
-        games.heartCatcher.hearts.forEach((heart, index) => {
+        // Move hearts and check collisions
+        for (let i = games.heartCatcher.hearts.length - 1; i >= 0; i--) {
+            const heart = games.heartCatcher.hearts[i];
             const top = parseFloat(heart.style.top || 0);
+            
             if (top > gameContainer.offsetHeight) {
                 heart.remove();
-                games.heartCatcher.hearts.splice(index, 1);
+                games.heartCatcher.hearts.splice(i, 1);
             } else {
                 heart.style.top = (top + 3) + 'px';
                 
-                // Check collision with player
+                // Check collision
                 const heartRect = heart.getBoundingClientRect();
                 const playerRect = player.getBoundingClientRect();
                 
@@ -1082,20 +1107,19 @@ function startHeartCatcher() {
                     heartRect.top <= playerRect.bottom &&
                     heartRect.right >= playerRect.left &&
                     heartRect.left <= playerRect.right) {
+                    // Remove heart and update score
                     heart.remove();
-                    games.heartCatcher.hearts.splice(index, 1);
-                    games.heartCatcher.score += 1;
+                    games.heartCatcher.hearts.splice(i, 1);
+                    games.heartCatcher.score++;
                     scoreDisplay.textContent = `Score: ${games.heartCatcher.score}`;
-                    if (sounds.pop) sounds.pop.play();
                     
-                    // Add visual feedback
+                    // Visual feedback
+                    if (sounds.pop) sounds.pop.play();
                     player.style.transform = 'scale(1.2)';
-                    setTimeout(() => {
-                        player.style.transform = 'none';
-                    }, 100);
+                    setTimeout(() => player.style.transform = 'scale(1)', 100);
                 }
             }
-        });
+        }
     }, 16);
 }
 

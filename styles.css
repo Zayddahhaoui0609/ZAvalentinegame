@@ -216,6 +216,8 @@ body {
     border: 2px solid var(--primary-color);
     border-radius: 15px;
     overflow: hidden;
+    touch-action: none;
+    user-select: none;
 }
 
 #player {
@@ -225,10 +227,14 @@ body {
     cursor: grab;
     user-select: none;
     z-index: 100;
+    touch-action: none;
+    -webkit-user-drag: none;
+    transition: transform 0.1s ease-out;
 }
 
 #player:active {
     cursor: grabbing;
+    transform: scale(1.1);
 }
 
 .falling-heart {

@@ -7,7 +7,7 @@ const sounds = {
 };
 
 // Music playlist with base URL
-const baseUrl = 'https://zaydvalentinegamee.vercel.app';
+const baseUrl = 'https://zayddahhaoui0609.github.io/ZAvalentinegame';
 const musicPlaylist = [
     "/Music/Bill Withers  - Just The Two Of Us (Lyrics).mp3",
     "/Music/Joji -  Glimpse of Us.mp3",

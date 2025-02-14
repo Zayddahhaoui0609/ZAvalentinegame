@@ -5,17 +5,16 @@ const sounds = {
 
 // Music playlist with direct URLs
 const musicPlaylist = [
-    "https://dl.dropboxusercontent.com/scl/fi/your-file-id/Bill%20Withers%20-%20Just%20The%20Two%20Of%20Us.mp3",
-    "https://dl.dropboxusercontent.com/scl/fi/your-file-id/Joji%20-%20Glimpse%20of%20Us.mp3",
-    "https://dl.dropboxusercontent.com/scl/fi/your-file-id/Joji%20-%20Like%20You%20Do.mp3",
-    "https://dl.dropboxusercontent.com/scl/fi/your-file-id/Lady%20Gaga%2C%20Bruno%20Mars%20-%20Die%20With%20A%20Smile.mp3",
-    "https://dl.dropboxusercontent.com/scl/fi/your-file-id/Rex%20Orange%20County%20-%20Loving%20is%20Easy.mp3",
-    "https://dl.dropboxusercontent.com/scl/fi/your-file-id/SZA%20-%20Snooze.mp3",
-    "https://dl.dropboxusercontent.com/scl/fi/your-file-id/SZA%20-%20The%20Weekend.mp3",
-    "https://dl.dropboxusercontent.com/scl/fi/your-file-id/Stephen%20Sanchez%20-%20Until%20I%20Found%20You.mp3",
-    "https://dl.dropboxusercontent.com/scl/fi/your-file-id/The%20Weeknd%20-%20Die%20For%20You.mp3",
-    "https://dl.dropboxusercontent.com/scl/fi/your-file-id/d4vd%20-%20Here%20With%20Me.mp3",
-    "https://dl.dropboxusercontent.com/scl/fi/your-file-id/d4vd%20-%20Romantic%20Homicide.mp3"
+    "https://dl.dropboxusercontent.com/scl/fi/2xl25vx27aa81lkwron9v/Bill-Withers-Just-The-Two-Of-Us-Lyrics.mp3?rlkey=apfnvaw9bi0b0q7az5fs6emzr",
+    "https://dl.dropboxusercontent.com/scl/fi/meqk5ddb7mrpb3x93i93v/Joji-Glimpse-of-Us.mp3?rlkey=m0u0sm3edy0yr3qcqtmivspud",
+    "https://dl.dropboxusercontent.com/scl/fi/ynq5o0ragvv11ti45c2m7/Joji-Like-You-Do.mp3?rlkey=nk6d9yoxtvnh0zik791syumh5",
+    "https://dl.dropboxusercontent.com/scl/fi/r0lzjity72haquomzle0y/Lady-Gaga-Bruno-Mars-Die-With-A-Smile-Official-Music-Video.mp3?rlkey=hf3d5gtzu40xa8wqhm8bvilis",
+    "https://dl.dropboxusercontent.com/scl/fi/i68wzacbgnk0a9gm8eht2/Rex-Orange-County-Loving-is-Easy-feat.-Benny-Sings-Official-Video.mp3?rlkey=zppnonxgwnid098cni98bwf5u",
+    "https://dl.dropboxusercontent.com/scl/fi/ob4o8tnf4ux8t63nb4fvr/SZA-Snooze-Official-Video.mp3?rlkey=sc8qokmsfipzankvz633sq4n1",
+    "https://dl.dropboxusercontent.com/scl/fi/dyckon54fjhc0dq6edvrg/SZA-The-Weekend-Official-Audio.mp3?rlkey=c82invvaa0g9jkrbxgrv4t23w",
+    "https://dl.dropboxusercontent.com/scl/fi/qpk6lsjmjxwaqndi4nz1b/The-Weeknd-Die-For-You-Official-Music-Video.mp3?rlkey=ph54sp9efck5at24ko1dd85nh",
+    "https://dl.dropboxusercontent.com/scl/fi/mqfyvcuu0bmr1khvgbmbd/d4vd-Here-With-Me-Official-Music-Video.mp3?rlkey=x2fndyliysxx5fz4x2mf4rmle",
+    "https://dl.dropboxusercontent.com/scl/fi/6rtvkpc97zme8nxaspc3j/d4vd-Romantic-Homicide.mp3?rlkey=8rl6ot4k751kac8r1ttu06xop"
 ];
 
 let currentMusicIndex = 0;

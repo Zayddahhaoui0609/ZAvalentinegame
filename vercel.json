@@ -1,14 +1,8 @@
 {
   "version": 2,
-  "routes": [
-    {
-      "src": "/Music/(.*)",
-      "dest": "/Music/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
-    }
+  "rewrites": [
+    { "source": "/Music/(.*)", "destination": "/Music/$1" },
+    { "source": "/(.*)", "destination": "/$1" }
   ],
   "headers": [
     {

@@ -3,7 +3,9 @@ let audioContext;
 
 // Sound effects and Music Player
 const sounds = {
-    pop: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-modern-technology-select-3124.mp3')
+    pop: new Howl({
+        src: ['https://assets.mixkit.co/sfx/preview/mixkit-modern-technology-select-3124.mp3']
+    })
 };
 
 // Music playlist with direct URLs
@@ -24,25 +26,6 @@ let currentMusicIndex = 0;
 let currentMusic = null;
 let isMusicPlaying = false;
 
-// Function to initialize audio context
-async function initAudioContext() {
-    try {
-        if (!audioContext) {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        
-        // Check if context is in suspended state (autoplay policy)
-        if (audioContext.state === 'suspended') {
-            await audioContext.resume();
-        }
-        
-        return true;
-    } catch (error) {
-        console.error('Failed to initialize audio context:', error);
-        return false;
-    }
-}
-
 // Function to get song name from URL
 function getSongName(url) {
     const decodedUrl = decodeURIComponent(url);
@@ -58,97 +41,66 @@ function updateCurrentSongDisplay() {
 
 // Function to update progress bar
 function updateProgressBar() {
-    if (currentMusic && !currentMusic.paused) {
-        const progress = (currentMusic.currentTime / currentMusic.duration) * 100;
+    if (currentMusic && currentMusic.playing()) {
+        const progress = (currentMusic.seek() / currentMusic.duration()) * 100;
         document.getElementById('progressBar').style.width = progress + '%';
         requestAnimationFrame(updateProgressBar);
     }
 }
 
 // Function to play a song
-async function playSong() {
+function playSong() {
     try {
-        // Initialize audio context first
-        const audioInitialized = await initAudioContext();
-        if (!audioInitialized) {
-            console.error('Failed to initialize audio context');
-            return;
-        }
-        
         if (currentMusic) {
-            currentMusic.pause();
-            currentMusic = null;
+            currentMusic.unload();
         }
 
-        const song = musicPlaylist[currentMusicIndex];
-        console.log('Attempting to play:', song);
-
-        currentMusic = new Audio(song);
-        
-        // Add error handling
-        currentMusic.onerror = (e) => {
-            console.error('Error loading song:', song, e.target.error);
-            setTimeout(playNextSong, 2000);
-        };
-
-        // Set up mobile-friendly options
-        currentMusic.preload = 'auto';
-        currentMusic.playsinline = true;
-
-        // Wait for the audio to be loaded
-        await new Promise((resolve, reject) => {
-            currentMusic.addEventListener('canplaythrough', resolve, { once: true });
-            currentMusic.addEventListener('error', reject, { once: true });
-            currentMusic.load();
+        currentMusic = new Howl({
+            src: [musicPlaylist[currentMusicIndex]],
+            html5: true,
+            preload: true,
+            onplay: function() {
+                isMusicPlaying = true;
+                document.getElementById('playBtn').textContent = '⏸️';
+                updateCurrentSongDisplay();
+                updateProgressBar();
+            },
+            onend: function() {
+                playNextSong();
+            },
+            onloaderror: function() {
+                console.error('Error loading song:', musicPlaylist[currentMusicIndex]);
+                setTimeout(playNextSong, 2000);
+            },
+            onplayerror: function() {
+                console.error('Error playing song:', musicPlaylist[currentMusicIndex]);
+                if (Howler.ctx && Howler.ctx.state === 'suspended') {
+                    Howler.ctx.resume().then(() => {
+                        currentMusic.play();
+                    });
+                }
+            }
         });
 
-        // Play the audio with better error handling
-        try {
-            await currentMusic.play();
-            isMusicPlaying = true;
-            document.getElementById('playBtn').textContent = '⏸️';
-            updateCurrentSongDisplay();
-            updateProgressBar();
-        } catch (playError) {
-            console.error('Error playing audio:', playError);
-            // If autoplay was prevented, we'll need user interaction
-            if (playError.name === 'NotAllowedError') {
-                alert('Please tap the play button to start the music (required for mobile devices)');
-            }
-        }
-
-        // Add ended event listener
-        currentMusic.addEventListener('ended', playNextSong);
+        currentMusic.play();
 
     } catch (error) {
-        console.error('Error playing song:', error);
+        console.error('Error in playSong:', error);
         setTimeout(playNextSong, 2000);
     }
 }
 
 // Function to toggle music
-async function toggleMusic() {
+function toggleMusic() {
     try {
         if (!currentMusic) {
-            await playSong();
+            playSong();
         } else {
             if (isMusicPlaying) {
                 currentMusic.pause();
                 document.getElementById('playBtn').textContent = '▶️';
             } else {
-                const playPromise = currentMusic.play();
-                if (playPromise !== undefined) {
-                    playPromise
-                        .then(() => {
-                            document.getElementById('playBtn').textContent = '⏸️';
-                        })
-                        .catch(error => {
-                            console.error('Playback failed:', error);
-                            if (error.name === 'NotAllowedError') {
-                                alert('Please tap the play button to start the music (required for mobile devices)');
-                            }
-                        });
-                }
+                currentMusic.play();
             }
             isMusicPlaying = !isMusicPlaying;
         }
@@ -179,10 +131,6 @@ function initMusicPlayer() {
             <span id="currentSong">Select a song to play</span>
             <div class="music-progress">
                 <div class="progress-bar" id="progressBar"></div>
-            </div>
-            <div class="time-display">
-                <span id="currentTime">0:00</span>
-                <span id="totalTime">0:00</span>
             </div>
         </div>
         <div class="music-selection">
@@ -223,7 +171,7 @@ function initMusicPlayer() {
         if (currentMusic) {
             const rect = progressBar.getBoundingClientRect();
             const percent = (e.clientX - rect.left) / rect.width;
-            currentMusic.currentTime = currentMusic.duration * percent;
+            currentMusic.seek(currentMusic.duration() * percent);
             updateProgressBar();
         }
     });
@@ -1061,7 +1009,9 @@ function showMilestoneMessage(message) {
     document.querySelector('.game-container').classList.add('screen-shake');
 
     // Play milestone sound
-    sounds.milestone = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3');
+    sounds.milestone = new Howl({
+        src: ['https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3']
+    });
     sounds.milestone.play();
 
     // Remove message and screen shake after animation

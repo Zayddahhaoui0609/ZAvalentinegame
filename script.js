@@ -14,7 +14,7 @@ const musicPlaylist = [
     "https://dl.dropboxusercontent.com/scl/fi/r0lzjity72haquomzle0y/Lady-Gaga-Bruno-Mars-Die-With-A-Smile-Official-Music-Video.mp3?rlkey=hf3d5gtzu40xa8wqhm8bvilis",
     "https://dl.dropboxusercontent.com/scl/fi/i68wzacbgnk0a9gm8eht2/Rex-Orange-County-Loving-is-Easy-feat.-Benny-Sings-Official-Video.mp3?rlkey=zppnonxgwnid098cni98bwf5u",
     "https://dl.dropboxusercontent.com/scl/fi/ob4o8tnf4ux8t63nb4fvr/SZA-Snooze-Official-Video.mp3?rlkey=sc8qokmsfipzankvz633sq4n1",
-    "https://dl.dropboxusercontent.com/scl/fi/dyckon54fjhc0dq6edvrg/SZA-The-Weekend-Official-Audio.mp3?rlkey=c82invvaa0g9jkrbxgrv4t23w",
+    "https://dl.dropboxusercontent.com/scl/fi/dyckon54fjhc0dq6edvrg/SZA-The-Weeknd-Official-Audio.mp3?rlkey=c82invvaa0g9jkrbxgrv4t23w",
     "https://dl.dropboxusercontent.com/scl/fi/qpk6lsjmjxwaqndi4nz1b/The-Weeknd-Die-For-You-Official-Music-Video.mp3?rlkey=ph54sp9efck5at24ko1dd85nh",
     "https://dl.dropboxusercontent.com/scl/fi/mqfyvcuu0bmr1khvgbmbd/d4vd-Here-With-Me-Official-Music-Video.mp3?rlkey=x2fndyliysxx5fz4x2mf4rmle",
     "https://dl.dropboxusercontent.com/scl/fi/6rtvkpc97zme8nxaspc3j/d4vd-Romantic-Homicide.mp3?rlkey=8rl6ot4k751kac8r1ttu06xop"
@@ -23,7 +23,6 @@ const musicPlaylist = [
 let currentMusicIndex = 0;
 let currentMusic = null;
 let isMusicPlaying = false;
-let nextMusic = null;
 
 // Function to initialize audio context
 function initAudioContext() {
@@ -45,86 +44,36 @@ function getSongName(url) {
 // Function to update current song display
 function updateCurrentSongDisplay() {
     const songName = getSongName(musicPlaylist[currentMusicIndex]);
-    const currentSongElement = document.getElementById('currentSong');
-    currentSongElement.textContent = songName;
-    currentSongElement.style.animation = 'none';
-    currentSongElement.offsetHeight; // Trigger reflow
-    currentSongElement.style.animation = null;
+    document.getElementById('currentSong').textContent = songName;
 }
 
 // Function to update progress bar
 function updateProgressBar() {
     if (currentMusic && !currentMusic.paused) {
         const progress = (currentMusic.currentTime / currentMusic.duration) * 100;
-        const progressBar = document.getElementById('progressBar');
-        progressBar.style.width = progress + '%';
-        
-        // Update time display
-        const currentTime = document.getElementById('currentTime');
-        const totalTime = document.getElementById('totalTime');
-        if (currentTime && totalTime) {
-            currentTime.textContent = formatTime(currentMusic.currentTime);
-            totalTime.textContent = formatTime(currentMusic.duration);
-        }
-        
+        document.getElementById('progressBar').style.width = progress + '%';
         requestAnimationFrame(updateProgressBar);
     }
-}
-
-// Function to preload next song
-function preloadNextSong() {
-    const nextIndex = (currentMusicIndex + 1) % musicPlaylist.length;
-    const nextSongUrl = musicPlaylist[nextIndex];
-    
-    if (nextMusic) {
-        nextMusic.src = ''; // Clear previous preload
-    }
-    
-    nextMusic = new Audio();
-    nextMusic.preload = 'auto';
-    nextMusic.src = nextSongUrl;
-}
-
-// Function to show loading state
-function showLoading() {
-    const playBtn = document.getElementById('playBtn');
-    playBtn.textContent = '⌛';
-    playBtn.disabled = true;
-    document.getElementById('currentSong').textContent = 'Loading...';
-}
-
-// Function to hide loading state
-function hideLoading() {
-    const playBtn = document.getElementById('playBtn');
-    playBtn.disabled = false;
-    playBtn.textContent = isMusicPlaying ? '⏸️' : '▶️';
 }
 
 // Function to play a song
 async function playSong() {
     try {
         initAudioContext();
-        showLoading();
         
         if (currentMusic) {
             currentMusic.pause();
             currentMusic = null;
         }
 
-        // Use preloaded song if available
-        if (nextMusic && nextMusic.src === musicPlaylist[currentMusicIndex]) {
-            currentMusic = nextMusic;
-            nextMusic = null;
-        } else {
-            currentMusic = new Audio(musicPlaylist[currentMusicIndex]);
-        }
-        
-        console.log('Attempting to play:', musicPlaylist[currentMusicIndex]);
+        const song = musicPlaylist[currentMusicIndex];
+        console.log('Attempting to play:', song);
+
+        currentMusic = new Audio(song);
         
         // Add error handling
         currentMusic.onerror = (e) => {
-            console.error('Error loading song:', e.target.error);
-            hideLoading();
+            console.error('Error loading song:', song, e.target.error);
             setTimeout(playNextSong, 2000);
         };
 
@@ -138,19 +87,15 @@ async function playSong() {
         // Play the audio
         await currentMusic.play();
         isMusicPlaying = true;
-        hideLoading();
+        document.getElementById('playBtn').textContent = '⏸️';
         updateCurrentSongDisplay();
         updateProgressBar();
-
-        // Preload next song
-        preloadNextSong();
 
         // Add ended event listener
         currentMusic.addEventListener('ended', playNextSong);
 
     } catch (error) {
         console.error('Error playing song:', error);
-        hideLoading();
         setTimeout(playNextSong, 2000);
     }
 }
@@ -1038,7 +983,7 @@ const games = {
         description: "Catch falling hearts to score points!",
         score: 0,
         active: false,
-        speed: 2,
+        speed: 3,
         hearts: []
     },
     loveQuiz: {
@@ -1050,74 +995,58 @@ const games = {
     }
 };
 
-// Memory Match Game Logic
-function startMemoryMatch() {
-    games.memoryMatch.active = true;
-    games.memoryMatch.score = 0;
-    games.memoryMatch.pairs = [];
-    
-    const gameArea = document.getElementById('gameArea');
-    gameArea.innerHTML = '';
-    
-    // Create card pairs
-    const cards = [...games.memoryMatch.cards, ...games.memoryMatch.cards];
-    shuffleArray(cards);
-    
-    cards.forEach((card, index) => {
-        const cardElement = document.createElement('div');
-        cardElement.className = 'memory-card';
-        cardElement.dataset.card = card;
-        cardElement.dataset.index = index;
-        cardElement.innerHTML = '<div class="card-back">?</div><div class="card-front">' + card + '</div>';
-        cardElement.addEventListener('click', handleCardClick);
-        gameArea.appendChild(cardElement);
-    });
-}
-
-function handleCardClick(e) {
-    if (!games.memoryMatch.active) return;
-    
-    const card = e.currentTarget;
-    if (card.classList.contains('flipped')) return;
-    
-    card.classList.add('flipped');
-    games.memoryMatch.pairs.push(card);
-    
-    if (games.memoryMatch.pairs.length === 2) {
-        const [card1, card2] = games.memoryMatch.pairs;
-        if (card1.dataset.card === card2.dataset.card) {
-            games.memoryMatch.score += 10;
-            games.memoryMatch.pairs = [];
-            sounds.pop.play();
-        } else {
-            setTimeout(() => {
-                card1.classList.remove('flipped');
-                card2.classList.remove('flipped');
-                games.memoryMatch.pairs = [];
-            }, 1000);
-        }
-    }
-}
-
 // Heart Catcher Game Logic
 function startHeartCatcher() {
+    const gameSection = document.getElementById('gameSection');
+    const gameContainer = document.querySelector('.game-container');
+    const scoreDisplay = document.getElementById('score');
+    const player = document.getElementById('player');
+
+    // Initialize game state
     games.heartCatcher.active = true;
     games.heartCatcher.score = 0;
     games.heartCatcher.hearts = [];
     
-    const gameArea = document.getElementById('gameArea');
-    gameArea.innerHTML = '<div id="catcher" class="catcher">🤲</div>';
-    
-    const catcher = document.getElementById('catcher');
-    let catcherX = gameArea.offsetWidth / 2;
-    
-    // Mouse/Touch controls
-    gameArea.addEventListener('mousemove', (e) => {
-        if (!games.heartCatcher.active) return;
-        catcherX = e.clientX - gameArea.offsetLeft;
-        catcher.style.left = Math.max(0, Math.min(catcherX, gameArea.offsetWidth - catcher.offsetWidth)) + 'px';
+    // Show game section
+    gameSection.style.display = 'block';
+    scoreDisplay.textContent = 'Score: 0';
+
+    // Initialize player position
+    player.style.left = '200px';
+    player.style.bottom = '20px';
+
+    // Dragging variables
+    let isMouseDown = false;
+    let mouseX;
+    let playerLeft;
+
+    // Mouse down event on player
+    player.addEventListener('mousedown', function(e) {
+        isMouseDown = true;
+        mouseX = e.clientX;
+        playerLeft = player.offsetLeft;
     });
-    
+
+    // Mouse move event on document
+    document.addEventListener('mousemove', function(e) {
+        if (!isMouseDown) return;
+        
+        const deltaX = e.clientX - mouseX;
+        let newLeft = playerLeft + deltaX;
+        
+        // Keep within bounds
+        const maxLeft = gameContainer.offsetWidth - player.offsetWidth;
+        if (newLeft < 0) newLeft = 0;
+        if (newLeft > maxLeft) newLeft = maxLeft;
+        
+        player.style.left = newLeft + 'px';
+    });
+
+    // Mouse up event on document
+    document.addEventListener('mouseup', function() {
+        isMouseDown = false;
+    });
+
     // Game loop
     const gameLoop = setInterval(() => {
         if (!games.heartCatcher.active) {
@@ -1130,36 +1059,44 @@ function startHeartCatcher() {
             const heart = document.createElement('div');
             heart.className = 'falling-heart';
             heart.innerHTML = '❤️';
-            heart.style.left = Math.random() * (gameArea.offsetWidth - 20) + 'px';
-            gameArea.appendChild(heart);
+            heart.style.left = Math.random() * (gameContainer.offsetWidth - 20) + 'px';
+            heart.style.top = '0px';
+            gameContainer.appendChild(heart);
             games.heartCatcher.hearts.push(heart);
         }
         
         // Move hearts
         games.heartCatcher.hearts.forEach((heart, index) => {
             const top = parseFloat(heart.style.top || 0);
-            if (top > gameArea.offsetHeight) {
+            if (top > gameContainer.offsetHeight) {
                 heart.remove();
                 games.heartCatcher.hearts.splice(index, 1);
             } else {
-                heart.style.top = (top + games.heartCatcher.speed) + 'px';
+                heart.style.top = (top + 3) + 'px';
                 
-                // Check collision with catcher
+                // Check collision with player
                 const heartRect = heart.getBoundingClientRect();
-                const catcherRect = catcher.getBoundingClientRect();
+                const playerRect = player.getBoundingClientRect();
                 
-                if (heartRect.bottom >= catcherRect.top &&
-                    heartRect.top <= catcherRect.bottom &&
-                    heartRect.right >= catcherRect.left &&
-                    heartRect.left <= catcherRect.right) {
+                if (heartRect.bottom >= playerRect.top &&
+                    heartRect.top <= playerRect.bottom &&
+                    heartRect.right >= playerRect.left &&
+                    heartRect.left <= playerRect.right) {
                     heart.remove();
                     games.heartCatcher.hearts.splice(index, 1);
                     games.heartCatcher.score += 1;
-                    sounds.pop.play();
+                    scoreDisplay.textContent = `Score: ${games.heartCatcher.score}`;
+                    if (sounds.pop) sounds.pop.play();
+                    
+                    // Add visual feedback
+                    player.style.transform = 'scale(1.2)';
+                    setTimeout(() => {
+                        player.style.transform = 'none';
+                    }, 100);
                 }
             }
         });
-    }, 50);
+    }, 16);
 }
 
 // Utility function to shuffle array
@@ -1654,7 +1591,6 @@ style.textContent = `
         font-size: 1.2em;
         padding: 8px 20px;
         box-shadow: 0 3px 15px rgba(255, 215, 0, 0.3);
-        animation: superBadgePop 0.8s ease forwards;
     }
 
     .super-quote {

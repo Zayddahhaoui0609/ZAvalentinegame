@@ -207,54 +207,65 @@ body {
 }
 
 .game-container {
+    position: relative;
     width: 100%;
-    height: 300px;
+    max-width: 800px;
+    height: 400px;
     margin: 20px auto;
+    background: linear-gradient(180deg, rgba(255,182,193,0.2) 0%, rgba(255,192,203,0.1) 100%);
     border: 2px solid var(--primary-color);
     border-radius: 15px;
-    position: relative;
     overflow: hidden;
-    background: rgba(255, 255, 255, 0.9);
-    touch-action: none;
-    max-width: min(600px, 90%);
 }
 
 #player {
     position: absolute;
     bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 2rem;
-    cursor: pointer;
+    font-size: 2.5em;
+    cursor: grab;
     user-select: none;
-    z-index: 10;
-    touch-action: none;
+    z-index: 100;
+}
+
+#player:active {
+    cursor: grabbing;
 }
 
 .falling-heart {
     position: absolute;
-    font-size: 1.5rem;
-    animation: fallDown 3s linear;
-    cursor: pointer;
-    z-index: 5;
+    font-size: 1.8em;
+    user-select: none;
+    z-index: 90;
+    pointer-events: none;
+    animation: fall 3s linear;
+}
+
+@keyframes fall {
+    0% {
+        transform: translateY(-20px);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(420px);
+        opacity: 1;
+    }
 }
 
 #score {
     position: absolute;
     top: 10px;
     right: 10px;
-    font-size: 1.2rem;
-    color: var(--primary-color);
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 18px;
     font-weight: bold;
-    z-index: 15;
-}
-
-.score-popup {
-    position: absolute;
-    color: var(--primary-color);
-    font-weight: bold;
-    animation: scorePopup 1s ease-out forwards;
-    pointer-events: none;
+    color: #ff4d6d;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
 }
 
 .quiz-container {
@@ -297,27 +308,6 @@ body {
     transform: scale(1.05);
 }
 
-@keyframes fallDown {
-    from {
-        transform: translateY(-100%);
-    }
-    to {
-        transform: translateY(400%);
-    }
-}
-
-@keyframes scorePopup {
-    0% {
-        transform: translateY(0) scale(1);
-        opacity: 1;
-    }
-    100% {
-        transform: translateY(-50px) scale(1.5);
-        opacity: 0;
-    }
-}
-
-/* Memory Match Game */
 .memory-card {
     width: 80px;
     height: 80px;
@@ -356,50 +346,66 @@ body {
     color: white;
 }
 
-/* Heart Catcher Game */
 .catcher {
     position: absolute;
     bottom: 20px;
-    font-size: 2rem;
-    cursor: pointer;
+    font-size: 2.5em;
+    cursor: none;
     user-select: none;
-    z-index: 10;
+    transform-origin: center bottom;
+    transition: transform 0.1s ease-out;
+    z-index: 100;
+    touch-action: none;
+}
+
+.catcher:active {
+    transform: scale(1.1);
 }
 
 .falling-heart {
     position: absolute;
-    font-size: 1.5rem;
+    font-size: 1.8em;
+    animation: heartFloat 1s ease-in;
     user-select: none;
-    animation: fall 3s linear;
+    z-index: 90;
 }
 
-@keyframes fall {
-    from { top: -20px; }
-    to { top: 100%; }
+@keyframes heartFloat {
+    0% {
+        transform: translateY(-20px) scale(0.8);
+        opacity: 0;
+    }
+    20% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
 }
 
-/* Game Area */
 #gameArea {
+    position: relative;
     width: 100%;
     height: 400px;
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 15px;
-    border: 2px solid var(--primary-color);
-    position: relative;
     overflow: hidden;
-    margin: 20px 0;
+    background: linear-gradient(180deg, rgba(255,182,193,0.2) 0%, rgba(255,192,203,0.1) 100%);
+    border-radius: 15px;
+    cursor: none;
 }
 
 .game-score {
     position: absolute;
     top: 10px;
     right: 10px;
-    background: var(--primary-color);
-    color: white;
-    padding: 5px 10px;
-    border-radius: 15px;
-    font-size: 1.2rem;
-    z-index: 100;
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 18px;
+    font-weight: bold;
+    color: #ff4d6d;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
 }
 
 .game-controls {
@@ -428,7 +434,6 @@ body {
     box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
 }
 
-/* Music Player Styles */
 .music-controls {
     background: rgba(255, 255, 255, 0.95);
     border-radius: 15px;
@@ -456,8 +461,6 @@ body {
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
     display: block;
     padding: 5px;
-    transition: opacity 0.3s ease;
-    animation: slideIn 0.3s ease-out;
 }
 
 .music-selection {
@@ -499,7 +502,6 @@ body {
     margin: 8px 0;
     cursor: pointer;
     position: relative;
-    transition: opacity 0.3s ease;
 }
 
 .time-display {
@@ -539,33 +541,6 @@ body {
 
 .music-btn:active {
     transform: scale(0.95);
-}
-
-@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
-}
-
-#currentSong:empty,
-#currentSong:contains('Loading...') {
-    animation: pulse 1.5s infinite;
-}
-
-button:disabled {
-    opacity: 0.5;
-    cursor: wait;
-}
-
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
 }
 
 @media screen and (max-width: 480px) {

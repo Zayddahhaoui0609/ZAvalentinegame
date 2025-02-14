@@ -1000,7 +1000,6 @@ function startHeartCatcher() {
     const gameSection = document.getElementById('gameSection');
     const gameContainer = document.querySelector('.game-container');
     const scoreDisplay = document.getElementById('score');
-    const player = document.getElementById('player');
 
     // Initialize game state
     games.heartCatcher.active = true;
@@ -1011,75 +1010,40 @@ function startHeartCatcher() {
     // Show game section
     gameSection.style.display = 'block';
 
-    // Initialize player position
-    player.style.left = '200px';
-    player.style.bottom = '20px';
-
-    // Dragging functionality
-    let isDragging = false;
-    let currentX;
-    let initialX;
-    let xOffset = 0;
-
-    function dragStart(e) {
-        if (e.type === "mousedown") {
-            initialX = e.clientX - xOffset;
-        } else {
-            initialX = e.touches[0].clientX - xOffset;
-        }
-        
-        if (e.target === player) {
-            isDragging = true;
-        }
-    }
-
-    function dragEnd(e) {
-        initialX = currentX;
-        isDragging = false;
-    }
-
-    function drag(e) {
-        if (isDragging) {
-            e.preventDefault();
-            
-            if (e.type === "mousemove") {
-                currentX = e.clientX - initialX;
-            } else {
-                currentX = e.touches[0].clientX - initialX;
-            }
-
-            xOffset = currentX;
-            
-            // Keep player within bounds
-            const containerRect = gameContainer.getBoundingClientRect();
-            const playerRect = player.getBoundingClientRect();
-            const maxX = containerRect.width - playerRect.width;
-            
-            let newX = Math.min(Math.max(currentX, 0), maxX);
-            player.style.left = newX + 'px';
-        }
-    }
-
-    // Mouse Events
-    player.addEventListener('mousedown', dragStart, false);
-    document.addEventListener('mousemove', drag, false);
-    document.addEventListener('mouseup', dragEnd, false);
-
-    // Touch Events
-    player.addEventListener('touchstart', dragStart, false);
-    document.addEventListener('touchmove', drag, false);
-    document.addEventListener('touchend', dragEnd, false);
-
-    function checkCollision(rect1, rect2) {
-        return !(rect1.right < rect2.left || 
-                rect1.left > rect2.right || 
-                rect1.bottom < rect2.top || 
-                rect1.top > rect2.bottom);
-    }
-
     function updateScore() {
         games.heartCatcher.score++;
         scoreDisplay.textContent = `Score: ${games.heartCatcher.score}`;
+    }
+
+    function createHeart() {
+        const heart = document.createElement('div');
+        heart.className = 'falling-heart';
+        heart.innerHTML = '❤️';
+        heart.style.left = Math.random() * (gameContainer.offsetWidth - 40) + 'px';
+        heart.style.top = '0px';
+        
+        // Add click handler to the heart
+        heart.addEventListener('click', function() {
+            // Update score
+            updateScore();
+            
+            // Play sound
+            if (sounds.pop) sounds.pop.play();
+            
+            // Remove heart with animation
+            heart.style.transform = 'scale(1.5)';
+            heart.style.opacity = '0';
+            setTimeout(() => {
+                heart.remove();
+                const index = games.heartCatcher.hearts.indexOf(heart);
+                if (index > -1) {
+                    games.heartCatcher.hearts.splice(index, 1);
+                }
+            }, 200);
+        });
+        
+        gameContainer.appendChild(heart);
+        games.heartCatcher.hearts.push(heart);
     }
 
     // Game loop
@@ -1091,18 +1055,10 @@ function startHeartCatcher() {
         
         // Create new hearts
         if (Math.random() < 0.1) {
-            const heart = document.createElement('div');
-            heart.className = 'falling-heart';
-            heart.innerHTML = '❤️';
-            heart.style.left = Math.random() * (gameContainer.offsetWidth - 20) + 'px';
-            heart.style.top = '0px';
-            gameContainer.appendChild(heart);
-            games.heartCatcher.hearts.push(heart);
+            createHeart();
         }
         
-        const playerRect = player.getBoundingClientRect();
-        
-        // Move hearts and check collisions
+        // Move hearts
         for (let i = games.heartCatcher.hearts.length - 1; i >= 0; i--) {
             const heart = games.heartCatcher.hearts[i];
             const top = parseFloat(heart.style.top || 0);
@@ -1113,23 +1069,7 @@ function startHeartCatcher() {
                 continue;
             }
             
-            heart.style.top = (top + 3) + 'px';
-            const heartRect = heart.getBoundingClientRect();
-            
-            // Check collision
-            if (checkCollision(heartRect, playerRect)) {
-                // Remove heart and update score
-                heart.remove();
-                games.heartCatcher.hearts.splice(i, 1);
-                updateScore();
-                
-                // Visual feedback
-                if (sounds.pop) sounds.pop.play();
-                player.style.transform = 'scale(1.2)';
-                setTimeout(() => {
-                    player.style.transform = 'scale(1)';
-                }, 100);
-            }
+            heart.style.top = (top + 2) + 'px';
         }
     }, 16);
 }

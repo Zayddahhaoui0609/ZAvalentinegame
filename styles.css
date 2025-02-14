@@ -216,34 +216,20 @@ body {
     border: 2px solid var(--primary-color);
     border-radius: 15px;
     overflow: hidden;
-    touch-action: none;
-    user-select: none;
-}
-
-#player {
-    position: absolute;
-    bottom: 20px;
-    font-size: 2.5em;
-    cursor: grab;
-    user-select: none;
-    z-index: 100;
-    touch-action: none;
-    -webkit-user-drag: none;
-    transition: transform 0.1s ease-out;
-}
-
-#player:active {
-    cursor: grabbing;
-    transform: scale(1.1);
 }
 
 .falling-heart {
     position: absolute;
-    font-size: 1.8em;
+    font-size: 2em;
+    cursor: pointer;
     user-select: none;
     z-index: 90;
-    pointer-events: none;
-    animation: fall 3s linear;
+    transition: transform 0.2s, opacity 0.2s;
+    animation: fall 4s linear;
+}
+
+.falling-heart:hover {
+    transform: scale(1.2);
 }
 
 @keyframes fall {
@@ -272,6 +258,23 @@ body {
     color: #ff4d6d;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     z-index: 1000;
+}
+
+#player {
+    position: absolute;
+    bottom: 20px;
+    font-size: 2.5em;
+    cursor: grab;
+    user-select: none;
+    z-index: 100;
+    touch-action: none;
+    -webkit-user-drag: none;
+    transition: transform 0.1s ease-out;
+}
+
+#player:active {
+    cursor: grabbing;
+    transform: scale(1.1);
 }
 
 .quiz-container {

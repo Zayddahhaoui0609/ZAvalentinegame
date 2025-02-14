@@ -1005,11 +1005,11 @@ function startHeartCatcher() {
     // Initialize game state
     games.heartCatcher.active = true;
     games.heartCatcher.score = 0;
+    scoreDisplay.textContent = 'Score: 0';
     games.heartCatcher.hearts = [];
     
     // Show game section
     gameSection.style.display = 'block';
-    scoreDisplay.textContent = 'Score: 0';
 
     // Initialize player position
     player.style.left = '200px';
@@ -1070,6 +1070,18 @@ function startHeartCatcher() {
     document.addEventListener('touchmove', drag, false);
     document.addEventListener('touchend', dragEnd, false);
 
+    function checkCollision(rect1, rect2) {
+        return !(rect1.right < rect2.left || 
+                rect1.left > rect2.right || 
+                rect1.bottom < rect2.top || 
+                rect1.top > rect2.bottom);
+    }
+
+    function updateScore() {
+        games.heartCatcher.score++;
+        scoreDisplay.textContent = `Score: ${games.heartCatcher.score}`;
+    }
+
     // Game loop
     const gameLoop = setInterval(() => {
         if (!games.heartCatcher.active) {
@@ -1088,6 +1100,8 @@ function startHeartCatcher() {
             games.heartCatcher.hearts.push(heart);
         }
         
+        const playerRect = player.getBoundingClientRect();
+        
         // Move hearts and check collisions
         for (let i = games.heartCatcher.hearts.length - 1; i >= 0; i--) {
             const heart = games.heartCatcher.hearts[i];
@@ -1096,28 +1110,25 @@ function startHeartCatcher() {
             if (top > gameContainer.offsetHeight) {
                 heart.remove();
                 games.heartCatcher.hearts.splice(i, 1);
-            } else {
-                heart.style.top = (top + 3) + 'px';
+                continue;
+            }
+            
+            heart.style.top = (top + 3) + 'px';
+            const heartRect = heart.getBoundingClientRect();
+            
+            // Check collision
+            if (checkCollision(heartRect, playerRect)) {
+                // Remove heart and update score
+                heart.remove();
+                games.heartCatcher.hearts.splice(i, 1);
+                updateScore();
                 
-                // Check collision
-                const heartRect = heart.getBoundingClientRect();
-                const playerRect = player.getBoundingClientRect();
-                
-                if (heartRect.bottom >= playerRect.top &&
-                    heartRect.top <= playerRect.bottom &&
-                    heartRect.right >= playerRect.left &&
-                    heartRect.left <= playerRect.right) {
-                    // Remove heart and update score
-                    heart.remove();
-                    games.heartCatcher.hearts.splice(i, 1);
-                    games.heartCatcher.score++;
-                    scoreDisplay.textContent = `Score: ${games.heartCatcher.score}`;
-                    
-                    // Visual feedback
-                    if (sounds.pop) sounds.pop.play();
-                    player.style.transform = 'scale(1.2)';
-                    setTimeout(() => player.style.transform = 'scale(1)', 100);
-                }
+                // Visual feedback
+                if (sounds.pop) sounds.pop.play();
+                player.style.transform = 'scale(1.2)';
+                setTimeout(() => {
+                    player.style.transform = 'scale(1)';
+                }, 100);
             }
         }
     }, 16);

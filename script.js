@@ -23,6 +23,7 @@ const musicPlaylist = [
 let currentMusicIndex = 0;
 let currentMusic = null;
 let isMusicPlaying = false;
+let nextMusic = null;
 
 // Function to initialize audio context
 function initAudioContext() {
@@ -44,36 +45,86 @@ function getSongName(url) {
 // Function to update current song display
 function updateCurrentSongDisplay() {
     const songName = getSongName(musicPlaylist[currentMusicIndex]);
-    document.getElementById('currentSong').textContent = songName;
+    const currentSongElement = document.getElementById('currentSong');
+    currentSongElement.textContent = songName;
+    currentSongElement.style.animation = 'none';
+    currentSongElement.offsetHeight; // Trigger reflow
+    currentSongElement.style.animation = null;
 }
 
 // Function to update progress bar
 function updateProgressBar() {
     if (currentMusic && !currentMusic.paused) {
         const progress = (currentMusic.currentTime / currentMusic.duration) * 100;
-        document.getElementById('progressBar').style.width = progress + '%';
+        const progressBar = document.getElementById('progressBar');
+        progressBar.style.width = progress + '%';
+        
+        // Update time display
+        const currentTime = document.getElementById('currentTime');
+        const totalTime = document.getElementById('totalTime');
+        if (currentTime && totalTime) {
+            currentTime.textContent = formatTime(currentMusic.currentTime);
+            totalTime.textContent = formatTime(currentMusic.duration);
+        }
+        
         requestAnimationFrame(updateProgressBar);
     }
+}
+
+// Function to preload next song
+function preloadNextSong() {
+    const nextIndex = (currentMusicIndex + 1) % musicPlaylist.length;
+    const nextSongUrl = musicPlaylist[nextIndex];
+    
+    if (nextMusic) {
+        nextMusic.src = ''; // Clear previous preload
+    }
+    
+    nextMusic = new Audio();
+    nextMusic.preload = 'auto';
+    nextMusic.src = nextSongUrl;
+}
+
+// Function to show loading state
+function showLoading() {
+    const playBtn = document.getElementById('playBtn');
+    playBtn.textContent = '⌛';
+    playBtn.disabled = true;
+    document.getElementById('currentSong').textContent = 'Loading...';
+}
+
+// Function to hide loading state
+function hideLoading() {
+    const playBtn = document.getElementById('playBtn');
+    playBtn.disabled = false;
+    playBtn.textContent = isMusicPlaying ? '⏸️' : '▶️';
 }
 
 // Function to play a song
 async function playSong() {
     try {
         initAudioContext();
+        showLoading();
         
         if (currentMusic) {
             currentMusic.pause();
             currentMusic = null;
         }
 
-        const song = musicPlaylist[currentMusicIndex];
-        console.log('Attempting to play:', song);
-
-        currentMusic = new Audio(song);
+        // Use preloaded song if available
+        if (nextMusic && nextMusic.src === musicPlaylist[currentMusicIndex]) {
+            currentMusic = nextMusic;
+            nextMusic = null;
+        } else {
+            currentMusic = new Audio(musicPlaylist[currentMusicIndex]);
+        }
+        
+        console.log('Attempting to play:', musicPlaylist[currentMusicIndex]);
         
         // Add error handling
         currentMusic.onerror = (e) => {
-            console.error('Error loading song:', song, e.target.error);
+            console.error('Error loading song:', e.target.error);
+            hideLoading();
             setTimeout(playNextSong, 2000);
         };
 
@@ -87,15 +138,19 @@ async function playSong() {
         // Play the audio
         await currentMusic.play();
         isMusicPlaying = true;
-        document.getElementById('playBtn').textContent = '⏸️';
+        hideLoading();
         updateCurrentSongDisplay();
         updateProgressBar();
+
+        // Preload next song
+        preloadNextSong();
 
         // Add ended event listener
         currentMusic.addEventListener('ended', playNextSong);
 
     } catch (error) {
         console.error('Error playing song:', error);
+        hideLoading();
         setTimeout(playNextSong, 2000);
     }
 }

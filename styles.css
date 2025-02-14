@@ -456,6 +456,8 @@ body {
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
     display: block;
     padding: 5px;
+    transition: opacity 0.3s ease;
+    animation: slideIn 0.3s ease-out;
 }
 
 .music-selection {
@@ -497,6 +499,7 @@ body {
     margin: 8px 0;
     cursor: pointer;
     position: relative;
+    transition: opacity 0.3s ease;
 }
 
 .time-display {
@@ -536,6 +539,33 @@ body {
 
 .music-btn:active {
     transform: scale(0.95);
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+#currentSong:empty,
+#currentSong:contains('Loading...') {
+    animation: pulse 1.5s infinite;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: wait;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @media screen and (max-width: 480px) {

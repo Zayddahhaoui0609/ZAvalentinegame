@@ -1,9 +1,6 @@
 // Sound effects and Music Player
 const sounds = {
-    pop: new Howl({ 
-        src: ['https://assets.mixkit.co/sfx/preview/mixkit-modern-technology-select-3124.mp3'],
-        html5: true
-    })
+    pop: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-modern-technology-select-3124.mp3')
 };
 
 // Music playlist with relative paths
@@ -33,7 +30,8 @@ function encodeFilePath(path) {
 // Function to play a song with error handling
 function playSong() {
     if (currentMusic) {
-        currentMusic.unload();
+        currentMusic.pause();
+        currentMusic = null;
     }
 
     const song = musicPlaylist[currentMusicIndex];
@@ -46,38 +44,30 @@ function playSong() {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            // File exists, now create and play the Howl
-            currentMusic = new Howl({
-                src: [encodedSong],
-                html5: true,
-                format: ['mp3'],
-                preload: true,
-                onplay: function() {
-                    isMusicPlaying = true;
-                    document.getElementById('playBtn').textContent = '⏸️';
-                    updateCurrentSongDisplay();
-                },
-                onpause: function() {
-                    isMusicPlaying = false;
-                    document.getElementById('playBtn').textContent = '▶️';
-                },
-                onend: function() {
-                    playNextSong();
-                },
-                onloaderror: function(id, err) {
-                    console.error('Error loading song:', encodedSong, err);
-                    document.getElementById('currentSong').textContent = 'Error loading song: ' + song.split('/').pop();
-                    setTimeout(playNextSong, 2000);
-                },
-                onplayerror: function(id, err) {
-                    console.error('Error playing song:', encodedSong, err);
-                    document.getElementById('currentSong').textContent = 'Error playing song: ' + song.split('/').pop();
-                    setTimeout(playNextSong, 2000);
-                }
+            // File exists, now create and play the Audio
+            currentMusic = new Audio(encodedSong);
+            currentMusic.addEventListener('loadeddata', () => {
+                currentMusic.play()
+                    .then(() => {
+                        isMusicPlaying = true;
+                        document.getElementById('playBtn').textContent = '⏸️';
+                        updateCurrentSongDisplay();
+                        updateProgressBar();
+                    })
+                    .catch(error => {
+                        console.error('Error playing song:', error);
+                        document.getElementById('currentSong').textContent = 'Error playing song: ' + song.split('/').pop();
+                        setTimeout(playNextSong, 2000);
+                    });
             });
 
-            currentMusic.play();
-            updateProgressBar();
+            currentMusic.addEventListener('error', () => {
+                console.error('Error loading song:', encodedSong);
+                document.getElementById('currentSong').textContent = 'Error loading song: ' + song.split('/').pop();
+                setTimeout(playNextSong, 2000);
+            });
+
+            currentMusic.addEventListener('ended', playNextSong);
         })
         .catch(error => {
             console.error('Error checking song:', error);
@@ -94,7 +84,7 @@ function initMusicPlayer() {
         <div class="music-info">
             <span id="currentSong">Select a song to play</span>
             <div class="music-progress">
-                <div class="progress-bar"></div>
+                <div class="progress-bar" id="progressBar"></div>
             </div>
             <div class="time-display">
                 <span id="currentTime">0:00</span>
@@ -139,7 +129,7 @@ function initMusicPlayer() {
         if (currentMusic) {
             const rect = progressBar.getBoundingClientRect();
             const percent = (e.clientX - rect.left) / rect.width;
-            currentMusic.seek(currentMusic.duration() * percent);
+            currentMusic.currentTime = currentMusic.duration * percent;
             updateProgressBar();
         }
     });
@@ -157,11 +147,12 @@ function updateProgressBar() {
         const currentTime = document.getElementById('currentTime');
         const totalTime = document.getElementById('totalTime');
         
-        const percent = (currentMusic.seek() / currentMusic.duration()) * 100;
+        const percent = (currentMusic.currentTime / currentMusic.duration) * 100;
         progress.style.width = percent + '%';
         
-        currentTime.textContent = formatTime(currentMusic.seek());
-        totalTime.textContent = formatTime(currentMusic.duration());
+        currentTime.textContent = formatTime(currentMusic.currentTime);
+        totalTime.textContent = formatTime(currentMusic.duration);
+        requestAnimationFrame(updateProgressBar);
     }
 }
 

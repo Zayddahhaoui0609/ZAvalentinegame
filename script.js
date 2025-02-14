@@ -25,12 +25,21 @@ let currentMusic = null;
 let isMusicPlaying = false;
 
 // Function to initialize audio context
-function initAudioContext() {
-    if (!audioContext) {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioContext.state === 'suspended') {
-            audioContext.resume();
+async function initAudioContext() {
+    try {
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
+        
+        // Check if context is in suspended state (autoplay policy)
+        if (audioContext.state === 'suspended') {
+            await audioContext.resume();
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('Failed to initialize audio context:', error);
+        return false;
     }
 }
 
@@ -59,7 +68,12 @@ function updateProgressBar() {
 // Function to play a song
 async function playSong() {
     try {
-        initAudioContext();
+        // Initialize audio context first
+        const audioInitialized = await initAudioContext();
+        if (!audioInitialized) {
+            console.error('Failed to initialize audio context');
+            return;
+        }
         
         if (currentMusic) {
             currentMusic.pause();
@@ -77,6 +91,10 @@ async function playSong() {
             setTimeout(playNextSong, 2000);
         };
 
+        // Set up mobile-friendly options
+        currentMusic.preload = 'auto';
+        currentMusic.playsinline = true;
+
         // Wait for the audio to be loaded
         await new Promise((resolve, reject) => {
             currentMusic.addEventListener('canplaythrough', resolve, { once: true });
@@ -84,12 +102,20 @@ async function playSong() {
             currentMusic.load();
         });
 
-        // Play the audio
-        await currentMusic.play();
-        isMusicPlaying = true;
-        document.getElementById('playBtn').textContent = '⏸️';
-        updateCurrentSongDisplay();
-        updateProgressBar();
+        // Play the audio with better error handling
+        try {
+            await currentMusic.play();
+            isMusicPlaying = true;
+            document.getElementById('playBtn').textContent = '⏸️';
+            updateCurrentSongDisplay();
+            updateProgressBar();
+        } catch (playError) {
+            console.error('Error playing audio:', playError);
+            // If autoplay was prevented, we'll need user interaction
+            if (playError.name === 'NotAllowedError') {
+                alert('Please tap the play button to start the music (required for mobile devices)');
+            }
+        }
 
         // Add ended event listener
         currentMusic.addEventListener('ended', playNextSong);
@@ -98,6 +124,50 @@ async function playSong() {
         console.error('Error playing song:', error);
         setTimeout(playNextSong, 2000);
     }
+}
+
+// Function to toggle music
+async function toggleMusic() {
+    try {
+        if (!currentMusic) {
+            await playSong();
+        } else {
+            if (isMusicPlaying) {
+                currentMusic.pause();
+                document.getElementById('playBtn').textContent = '▶️';
+            } else {
+                const playPromise = currentMusic.play();
+                if (playPromise !== undefined) {
+                    playPromise
+                        .then(() => {
+                            document.getElementById('playBtn').textContent = '⏸️';
+                        })
+                        .catch(error => {
+                            console.error('Playback failed:', error);
+                            if (error.name === 'NotAllowedError') {
+                                alert('Please tap the play button to start the music (required for mobile devices)');
+                            }
+                        });
+                }
+            }
+            isMusicPlaying = !isMusicPlaying;
+        }
+        updateCurrentSongDisplay();
+    } catch (error) {
+        console.error('Error in toggleMusic:', error);
+    }
+}
+
+// Function to play next song
+function playNextSong() {
+    currentMusicIndex = (currentMusicIndex + 1) % musicPlaylist.length;
+    playSong();
+}
+
+// Function to play previous song
+function playPreviousSong() {
+    currentMusicIndex = (currentMusicIndex - 1 + musicPlaylist.length) % musicPlaylist.length;
+    playSong();
 }
 
 // Initialize music player
@@ -157,38 +227,6 @@ function initMusicPlayer() {
             updateProgressBar();
         }
     });
-}
-
-function formatTime(secs) {
-    const minutes = Math.floor(secs / 60);
-    const seconds = Math.floor(secs % 60);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-}
-
-function toggleMusic() {
-    if (!currentMusic) {
-        playSong();
-    } else {
-        if (isMusicPlaying) {
-            currentMusic.pause();
-            document.getElementById('playBtn').textContent = '▶️';
-        } else {
-            currentMusic.play();
-            document.getElementById('playBtn').textContent = '⏸️';
-        }
-        isMusicPlaying = !isMusicPlaying;
-    }
-    updateCurrentSongDisplay();
-}
-
-function playNextSong() {
-    currentMusicIndex = (currentMusicIndex + 1) % musicPlaylist.length;
-    playSong();
-}
-
-function playPreviousSong() {
-    currentMusicIndex = (currentMusicIndex - 1 + musicPlaylist.length) % musicPlaylist.length;
-    playSong();
 }
 
 // Funny Valentine messages template
@@ -1604,137 +1642,6 @@ style.textContent = `
         }
         100% {
             transform: translateY(0%) rotate(360deg) scale(0.5);
-            opacity: 0;
-        }
-    }
-
-    @keyframes superBadgePop {
-        0% {
-            transform: scale(0) rotate(-180deg);
-        }
-        60% {
-            transform: scale(1.2) rotate(10deg);
-        }
-        100% {
-            transform: scale(1) rotate(0deg);
-        }
-    }
-
-    .respect-badge {
-        position: absolute;
-        bottom: 10px;
-        right: 10px;
-        background: linear-gradient(45deg, #FFD700, #FFA500);
-        padding: 5px 15px;
-        border-radius: 20px;
-        font-size: 0.9em;
-        color: white;
-        box-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
-        animation: badgeGlow 2s ease-in-out infinite;
-    }
-
-    @keyframes badgeGlow {
-        0%, 100% {
-            box-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
-        }
-        50% {
-            box-shadow: 0 2px 20px rgba(255, 215, 0, 0.6);
-        }
-    }
-
-    .transformation-container {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 15px;
-        margin: 20px 0;
-        font-size: 2em;
-    }
-
-    .bad-boy-outfit {
-        animation: fadeOutRotate 2s ease-in-out forwards;
-    }
-
-    .transform-arrow {
-        animation: pulse 1s ease-in-out infinite;
-    }
-
-    .soft-boy {
-        opacity: 0;
-        animation: fadeInRotate 2s ease-in-out 1s forwards;
-    }
-
-    .transforming-symbol {
-        transition: transform 0.5s ease-in-out, filter 0.5s ease-in-out;
-    }
-
-    .transforming-symbol.transform-active {
-        transform: scale(1.2) rotate(360deg);
-        filter: hue-rotate(180deg);
-    }
-
-    @keyframes fadeOutRotate {
-        0% {
-            opacity: 1;
-            transform: rotate(0deg);
-        }
-        100% {
-            opacity: 0.3;
-            transform: rotate(-180deg);
-        }
-    }
-
-    @keyframes fadeInRotate {
-        0% {
-            opacity: 0;
-            transform: rotate(180deg);
-        }
-        100% {
-            opacity: 1;
-            transform: rotate(0deg);
-        }
-    }
-
-    @keyframes pulse {
-        0%, 100% {
-            transform: scale(1);
-        }
-        50% {
-            transform: scale(1.2);
-        }
-    }
-
-    .milestone-message {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(255, 255, 255, 0.9);
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
-        z-index: 1000;
-        font-size: 24px;
-        text-align: center;
-        animation: popIn 0.5s ease-out;
-    }
-
-    @keyframes popIn {
-        0% { transform: translate(-50%, -50%) scale(0); }
-        70% { transform: translate(-50%, -50%) scale(1.1); }
-        100% { transform: translate(-50%, -50%) scale(1); }
-    }
-
-    .screen-shake {
-        animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
-    }
-
-    @keyframes shake {
-        10%, 90% { transform: translate3d(-1px, 0, 0); }
-        20%, 80% { transform: translate3d(2px, 0, 0); }
-        30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
-        40%, 60% { transform: translate3d(4px, 0, 0); }
-) rotate(360deg) scale(0.5);
             opacity: 0;
         }
     }

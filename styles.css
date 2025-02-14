@@ -746,6 +746,118 @@ body {
 
 /* Responsive Design */
 @media screen and (max-width: 768px) {
+    .content {
+        padding: 1rem;
+        margin: 0.5rem;
+        margin-bottom: 120px; /* Add space for music box */
+    }
+    
+    .btn-love {
+        font-size: 14px;
+        padding: 10px 20px;
+        margin: 0.25rem;
+    }
+    
+    .main-title {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .signature h4 {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    #musicBox {
+        bottom: 0;
+        padding: 10px;
+        border-radius: 15px 15px 0 0;
+        background: rgba(255, 255, 255, 0.95);
+    }
+
+    .game-container {
+        height: 300px; /* Smaller height for mobile */
+        margin-bottom: 120px; /* Space for music box */
+    }
+
+    .quiz-section {
+        margin-bottom: 120px; /* Space for music box */
+    }
+
+    .message-area {
+        margin-bottom: 120px; /* Space for music box */
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    .input-section {
+        padding: 0.5rem;
+    }
+
+    .quick-controls {
+        gap: 0.25rem;
+    }
+
+    .valentine-container {
+        padding: 0.5rem;
+    }
+
+    /* Improve touch targets */
+    button, 
+    .btn-love,
+    .music-controls button {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    /* Ensure music controls are properly spaced */
+    .music-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        width: 100%;
+        align-items: center;
+    }
+
+    .music-dropdown {
+        width: 100%;
+        max-width: 250px;
+        margin-bottom: 5px;
+    }
+}
+
+/* Add iPhone-specific fixes */
+@media screen and (max-width: 428px) {
+    .content {
+        margin: 0.25rem;
+        margin-bottom: 120px;
+        border-radius: 15px;
+    }
+
+    .valentine-container {
+        padding: 0.25rem;
+    }
+
+    #musicBox {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 15px 15px 0 0;
+    }
+
+    .input-section input {
+        font-size: 14px;
+        padding: 10px;
+    }
+}
+
+/* Fix safe area for newer iPhones */
+@supports (padding: max(0px)) {
+    #musicBox {
+        padding-bottom: max(10px, env(safe-area-inset-bottom));
+    }
+}
+
+@media screen and (max-width: 768px) {
     .container {
         padding: 20px 15px;
         max-width: 100%;

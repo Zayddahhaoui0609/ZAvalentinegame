@@ -1,9 +1,13 @@
 // Sound effects and Music Player
 const sounds = {
-    pop: new Howl({ src: ['https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'] })
+    pop: new Howl({ 
+        src: ['https://assets.mixkit.co/sfx/preview/mixkit-modern-technology-select-3124.mp3'],
+        html5: true
+    })
 };
 
-// Music playlist with absolute paths
+// Music playlist with base URL
+const baseUrl = 'https://zaydvalentinegamee.vercel.app';
 const musicPlaylist = [
     "/Music/Bill Withers  - Just The Two Of Us (Lyrics).mp3",
     "/Music/Joji -  Glimpse of Us.mp3",
@@ -16,7 +20,7 @@ const musicPlaylist = [
     "/Music/The Weeknd - Die For You (Official Music Video).mp3",
     "/Music/d4vd - Here With Me [Official Music Video].mp3",
     "/Music/d4vd - Romantic Homicide.mp3"
-];
+].map(path => `${baseUrl}${path}`);
 
 let currentMusicIndex = 0;
 let currentMusic = null;
@@ -130,6 +134,12 @@ function playSong() {
         src: [song],
         html5: true,
         format: ['mp3'],
+        xhr: {
+            method: 'GET',
+            headers: {
+                'Origin': baseUrl
+            }
+        },
         onplay: function() {
             isMusicPlaying = true;
             document.getElementById('playBtn').textContent = '⏸️';
@@ -145,10 +155,14 @@ function playSong() {
         onloaderror: function(id, err) {
             console.error('Error loading song:', song, err);
             document.getElementById('currentSong').textContent = 'Error loading song: ' + song.split('/').pop();
+            // Try next song on error
+            setTimeout(playNextSong, 2000);
         },
         onplayerror: function(id, err) {
             console.error('Error playing song:', song, err);
             document.getElementById('currentSong').textContent = 'Error playing song: ' + song.split('/').pop();
+            // Try next song on error
+            setTimeout(playNextSong, 2000);
         }
     });
 
@@ -157,6 +171,8 @@ function playSong() {
         updateProgressBar();
     } catch (error) {
         console.error('Error in playSong:', error);
+        // Try next song on error
+        setTimeout(playNextSong, 2000);
     }
 }
 

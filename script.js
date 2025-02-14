@@ -1019,11 +1019,19 @@ function startHeartCatcher() {
         const heart = document.createElement('div');
         heart.className = 'falling-heart';
         heart.innerHTML = '❤️';
-        heart.style.left = Math.random() * (gameContainer.offsetWidth - 40) + 'px';
-        heart.style.top = '0px';
+        
+        // Set initial position
+        const containerWidth = gameContainer.offsetWidth;
+        const heartWidth = 40; // Approximate width of the heart emoji
+        const randomX = Math.random() * (containerWidth - heartWidth);
+        heart.style.left = randomX + 'px';
+        heart.style.top = '-50px';
         
         // Add click handler to the heart
-        heart.addEventListener('click', function() {
+        heart.addEventListener('click', function(e) {
+            // Prevent the click from affecting other elements
+            e.stopPropagation();
+            
             // Update score
             updateScore();
             
@@ -1044,34 +1052,48 @@ function startHeartCatcher() {
         
         gameContainer.appendChild(heart);
         games.heartCatcher.hearts.push(heart);
+
+        // Start falling animation
+        let topPosition = -50;
+        const fallInterval = setInterval(() => {
+            if (!games.heartCatcher.active) {
+                clearInterval(fallInterval);
+                return;
+            }
+
+            topPosition += 2;
+            heart.style.top = topPosition + 'px';
+
+            // Remove heart if it goes off screen
+            if (topPosition > gameContainer.offsetHeight) {
+                heart.remove();
+                const index = games.heartCatcher.hearts.indexOf(heart);
+                if (index > -1) {
+                    games.heartCatcher.hearts.splice(index, 1);
+                }
+                clearInterval(fallInterval);
+            }
+        }, 16);
     }
 
-    // Game loop
-    const gameLoop = setInterval(() => {
+    // Create hearts periodically
+    const createHeartInterval = setInterval(() => {
         if (!games.heartCatcher.active) {
-            clearInterval(gameLoop);
+            clearInterval(createHeartInterval);
             return;
         }
-        
-        // Create new hearts
+
         if (Math.random() < 0.1) {
             createHeart();
         }
-        
-        // Move hearts
-        for (let i = games.heartCatcher.hearts.length - 1; i >= 0; i--) {
-            const heart = games.heartCatcher.hearts[i];
-            const top = parseFloat(heart.style.top || 0);
-            
-            if (top > gameContainer.offsetHeight) {
-                heart.remove();
-                games.heartCatcher.hearts.splice(i, 1);
-                continue;
-            }
-            
-            heart.style.top = (top + 2) + 'px';
-        }
-    }, 16);
+    }, 500);
+
+    // Cleanup function
+    return () => {
+        games.heartCatcher.active = false;
+        games.heartCatcher.hearts.forEach(heart => heart.remove());
+        games.heartCatcher.hearts = [];
+    };
 }
 
 // Utility function to shuffle array

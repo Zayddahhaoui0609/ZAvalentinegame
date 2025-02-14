@@ -5,17 +5,17 @@ const sounds = {
 
 // Music playlist
 const musicPlaylist = [
-    "music/Bill Withers  - Just The Two Of Us (Lyrics).mp3",
-    "music/Joji -  Glimpse of Us.mp3",
-    "music/Joji - Like You Do.mp3",
-    "music/Lady Gaga, Bruno Mars - Die With A Smile (Official Music Video).mp3",
-    "music/Rex Orange County - Loving is Easy (feat. Benny Sings) [Official Video].mp3",
-    "music/SZA - Snooze (Official Video).mp3",
-    "music/SZA - The Weekend (Official Audio).mp3",
-    "music/Stephen Sanchez - Until I Found You (Official Music Video).mp3",
-    "music/The Weeknd - Die For You (Official Music Video).mp3",
-    "music/d4vd - Here With Me [Official Music Video].mp3",
-    "music/d4vd - Romantic Homicide.mp3"
+    "/Music/Bill Withers  - Just The Two Of Us (Lyrics).mp3",
+    "/Music/Joji -  Glimpse of Us.mp3",
+    "/Music/Joji - Like You Do.mp3",
+    "/Music/Lady Gaga, Bruno Mars - Die With A Smile (Official Music Video).mp3",
+    "/Music/Rex Orange County - Loving is Easy (feat. Benny Sings) [Official Video].mp3",
+    "/Music/SZA - Snooze (Official Video).mp3",
+    "/Music/SZA - The Weekend (Official Audio).mp3",
+    "/Music/Stephen Sanchez - Until I Found You (Official Music Video).mp3",
+    "/Music/The Weeknd - Die For You (Official Music Video).mp3",
+    "/Music/d4vd - Here With Me [Official Music Video].mp3",
+    "/Music/d4vd - Romantic Homicide.mp3"
 ];
 
 let currentMusicIndex = 0;

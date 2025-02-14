@@ -25,6 +25,11 @@ let currentMusicIndex = 0;
 let currentMusic = null;
 let isMusicPlaying = false;
 
+// Function to encode file path
+function encodeFilePath(path) {
+    return path.split('/').map(part => encodeURIComponent(part)).join('/');
+}
+
 // Function to play a song with error handling
 function playSong() {
     if (currentMusic) {
@@ -32,46 +37,53 @@ function playSong() {
     }
 
     const song = musicPlaylist[currentMusicIndex];
-    console.log('Attempting to play:', song); // Debug log
+    const encodedSong = encodeFilePath(song);
+    console.log('Attempting to play:', encodedSong); // Debug log
 
-    currentMusic = new Howl({
-        src: [song],
-        html5: true,
-        format: ['mp3'],
-        onplay: function() {
-            isMusicPlaying = true;
-            document.getElementById('playBtn').textContent = '⏸️';
-            updateCurrentSongDisplay();
-        },
-        onpause: function() {
-            isMusicPlaying = false;
-            document.getElementById('playBtn').textContent = '▶️';
-        },
-        onend: function() {
-            playNextSong();
-        },
-        onloaderror: function(id, err) {
-            console.error('Error loading song:', song, err);
+    // First, check if the file exists
+    fetch(encodedSong)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            // File exists, now create and play the Howl
+            currentMusic = new Howl({
+                src: [encodedSong],
+                html5: true,
+                format: ['mp3'],
+                preload: true,
+                onplay: function() {
+                    isMusicPlaying = true;
+                    document.getElementById('playBtn').textContent = '⏸️';
+                    updateCurrentSongDisplay();
+                },
+                onpause: function() {
+                    isMusicPlaying = false;
+                    document.getElementById('playBtn').textContent = '▶️';
+                },
+                onend: function() {
+                    playNextSong();
+                },
+                onloaderror: function(id, err) {
+                    console.error('Error loading song:', encodedSong, err);
+                    document.getElementById('currentSong').textContent = 'Error loading song: ' + song.split('/').pop();
+                    setTimeout(playNextSong, 2000);
+                },
+                onplayerror: function(id, err) {
+                    console.error('Error playing song:', encodedSong, err);
+                    document.getElementById('currentSong').textContent = 'Error playing song: ' + song.split('/').pop();
+                    setTimeout(playNextSong, 2000);
+                }
+            });
+
+            currentMusic.play();
+            updateProgressBar();
+        })
+        .catch(error => {
+            console.error('Error checking song:', error);
             document.getElementById('currentSong').textContent = 'Error loading song: ' + song.split('/').pop();
-            // Try next song on error after 2 seconds
             setTimeout(playNextSong, 2000);
-        },
-        onplayerror: function(id, err) {
-            console.error('Error playing song:', song, err);
-            document.getElementById('currentSong').textContent = 'Error playing song: ' + song.split('/').pop();
-            // Try next song on error after 2 seconds
-            setTimeout(playNextSong, 2000);
-        }
-    });
-
-    try {
-        currentMusic.play();
-        updateProgressBar();
-    } catch (error) {
-        console.error('Error in playSong:', error);
-        // Try next song on error after 2 seconds
-        setTimeout(playNextSong, 2000);
-    }
+        });
 }
 
 // Initialize music player

@@ -1,9 +1,22 @@
 {
   "version": 2,
   "public": true,
-  "cleanUrls": true,
+  "cleanUrls": false,
   "trailingSlash": false,
   "headers": [
+    {
+      "source": "/Music/(.*)",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "audio/mpeg"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
     {
       "source": "/(.*)",
       "headers": [

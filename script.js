@@ -1425,6 +1425,153 @@ window.addEventListener('load', () => {
 // Handle window resize
 window.addEventListener('resize', updateGameDimensions);
 
+// Easter Egg System
+const easterEggs = {
+    'musicLover': { name: 'Music Lover 🎵', description: 'Listen to 5 different songs', unlocked: false },
+    'quickClicker': { name: 'Quick Clicker 🖱️', description: 'Click hearts rapidly', unlocked: false },
+    'nightOwl': { name: 'Night Owl 🦉', description: 'Play the game at midnight', unlocked: false },
+    'valentineSpirit': { name: 'Valentine Spirit 💝', description: 'Generate 10 messages', unlocked: false },
+    'secretCode': { name: 'Code Breaker 🔓', description: 'Find the secret code', unlocked: false }
+};
+
+let songPlayCount = new Set();
+let clickCount = 0;
+let clickTimer = null;
+let messageCount = 0;
+
+// Function to unlock an Easter egg
+function unlockEasterEgg(eggId) {
+    if (!easterEggs[eggId].unlocked) {
+        easterEggs[eggId].unlocked = true;
+        
+        // Save to localStorage
+        localStorage.setItem('easterEggs', JSON.stringify(easterEggs));
+        
+        // Show unlock animation
+        const notification = document.createElement('div');
+        notification.className = 'easter-egg-notification';
+        notification.innerHTML = `
+            <div class="notification-content">
+                <h3>🎉 Easter Egg Unlocked!</h3>
+                <p>${easterEggs[eggId].name}</p>
+                <p>${easterEggs[eggId].description}</p>
+            </div>
+        `;
+        document.body.appendChild(notification);
+        
+        // Update the tracker
+        updateEasterEggTracker();
+        
+        // Remove notification after animation
+        setTimeout(() => {
+            notification.classList.add('fade-out');
+            setTimeout(() => notification.remove(), 500);
+        }, 3000);
+    }
+}
+
+// Function to update Easter egg tracker
+function updateEasterEggTracker() {
+    const tracker = document.getElementById('easterEggTracker');
+    if (!tracker) return;
+
+    tracker.innerHTML = `
+        <div class="easter-eggs-title">Easter Eggs Found: ${Object.values(easterEggs).filter(egg => egg.unlocked).length}/${Object.keys(easterEggs).length}</div>
+        <div class="easter-eggs-grid">
+            ${Object.entries(easterEggs).map(([id, egg]) => `
+                <div class="easter-egg-item ${egg.unlocked ? 'unlocked' : 'locked'}">
+                    <div class="egg-icon">${egg.unlocked ? egg.name.split(' ')[1] : '❓'}</div>
+                    <div class="egg-info">
+                        <div class="egg-name">${egg.unlocked ? egg.name : 'Hidden'}</div>
+                        <div class="egg-description">${egg.unlocked ? egg.description : 'Keep exploring to unlock!'}</div>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+// Function to check for Easter eggs
+function checkEasterEggs() {
+    // Music Lover: Listen to 5 different songs
+    if (songPlayCount.size >= 5) {
+        unlockEasterEgg('musicLover');
+    }
+    
+    // Valentine Spirit: Generate 10 messages
+    if (messageCount >= 10) {
+        unlockEasterEgg('valentineSpirit');
+    }
+    
+    // Night Owl: Play at midnight
+    const currentHour = new Date().getHours();
+    if (currentHour === 0) {
+        unlockEasterEgg('nightOwl');
+    }
+}
+
+// Modified playSong function to track unique songs
+const originalPlaySong = playSong;
+playSong = async function() {
+    await originalPlaySong();
+    if (currentMusic && currentMusic.src) {
+        songPlayCount.add(currentMusicIndex);
+        checkEasterEggs();
+    }
+};
+
+// Modified generateMessage function to track message count
+const originalGenerateMessage = generateMessage;
+generateMessage = function() {
+    const result = originalGenerateMessage();
+    messageCount++;
+    checkEasterEggs();
+    return result;
+};
+
+// Click tracking for Quick Clicker Easter egg
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('heart')) {
+        clickCount++;
+        if (clickCount >= 20 && !easterEggs.quickClicker.unlocked) {
+            unlockEasterEgg('quickClicker');
+        }
+        
+        // Reset click count after 2 seconds of no clicking
+        clearTimeout(clickTimer);
+        clickTimer = setTimeout(() => {
+            clickCount = 0;
+        }, 2000);
+    }
+});
+
+// Konami code for Secret Code Easter egg
+let konamiCode = '';
+const secretCode = 'ArrowUpArrowUpArrowDownArrowDownArrowLeftArrowRightArrowLeftArrowRightba';
+document.addEventListener('keydown', (e) => {
+    konamiCode += e.key;
+    if (konamiCode.length > secretCode.length) {
+        konamiCode = konamiCode.substring(1);
+    }
+    if (konamiCode === secretCode) {
+        unlockEasterEgg('secretCode');
+    }
+});
+
+// Load saved Easter eggs from localStorage
+window.addEventListener('load', () => {
+    const savedEggs = localStorage.getItem('easterEggs');
+    if (savedEggs) {
+        const savedEggsObj = JSON.parse(savedEggs);
+        for (const [id, egg] of Object.entries(savedEggsObj)) {
+            if (egg.unlocked) {
+                easterEggs[id].unlocked = true;
+            }
+        }
+    }
+    updateEasterEggTracker();
+});
+
 // Update the CSS styles
 const style = document.createElement('style');
 style.textContent = `

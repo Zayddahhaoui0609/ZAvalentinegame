@@ -995,6 +995,92 @@ const games = {
     }
 };
 
+// Milestone messages for different score levels
+const milestoneMessages = {
+    10: "Nice start! But can you handle what's next? 👀",
+    20: "Okay, you're getting serious. Still single tho? 💀",
+    30: "Bro, are you training for the Olympics? 🏃‍♂️💨",
+    40: "At this point, you deserve a Valentine. 💘",
+    50: "Relax, it's just a game… or is it? 🤯",
+    60: "This isn't even my final form. 🔥",
+    70: "Do you even have a life outside this game? 🤡",
+    100: "Congratulations! You win… absolutely nothing. 🎉💀"
+};
+
+// Base game speed and speed increase factors
+let gameSpeed = 1;
+const speedIncreaseFactor = 1.2;
+let lastMilestoneScore = 0;
+
+// Function to show milestone message with animation
+function showMilestoneMessage(message) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'milestone-message';
+    messageDiv.textContent = message;
+    document.querySelector('.game-container').appendChild(messageDiv);
+
+    // Add screen shake effect
+    document.querySelector('.game-container').classList.add('screen-shake');
+
+    // Play milestone sound
+    sounds.milestone = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3');
+    sounds.milestone.play();
+
+    // Remove message and screen shake after animation
+    setTimeout(() => {
+        messageDiv.remove();
+        document.querySelector('.game-container').classList.remove('screen-shake');
+    }, 3000);
+}
+
+// Function to increase game speed
+function increaseGameSpeed() {
+    gameSpeed *= speedIncreaseFactor;
+    // Update enemy and heart speeds
+    const enemies = document.querySelectorAll('.enemy');
+    enemies.forEach(enemy => {
+        const currentSpeed = parseFloat(enemy.dataset.speed);
+        enemy.dataset.speed = currentSpeed * speedIncreaseFactor;
+    });
+}
+
+// Function to check milestones
+function checkMilestones(score) {
+    const milestone = Math.floor(score / 10) * 10;
+    if (milestone > lastMilestoneScore && milestoneMessages[milestone]) {
+        showMilestoneMessage(milestoneMessages[milestone]);
+        increaseGameSpeed();
+        lastMilestoneScore = milestone;
+    }
+}
+
+// Mini-game functionality
+let gameActive = false;
+let gameCleanup = null;
+
+document.getElementById('startGame').addEventListener('click', () => {
+    const gameSection = document.getElementById('gameSection');
+    const quizSection = document.getElementById('quizSection');
+    
+    if (gameSection.style.display === 'none') {
+        // Show game section
+        gameSection.style.display = 'block';
+        quizSection.style.display = 'none';
+        
+        // Start the heart catcher game
+        gameActive = true;
+        gameCleanup = startHeartCatcher();
+    } else {
+        // Hide and cleanup game
+        gameSection.style.display = 'none';
+        gameActive = false;
+        if (gameCleanup) {
+            gameCleanup();
+            gameCleanup = null;
+        }
+    }
+});
+
 // Heart Catcher Game Logic
 function startHeartCatcher() {
     const gameSection = document.getElementById('gameSection');
@@ -1002,36 +1088,38 @@ function startHeartCatcher() {
     const scoreDisplay = document.getElementById('score');
 
     // Initialize game state
-    games.heartCatcher.active = true;
-    games.heartCatcher.score = 0;
+    let score = 0;
     scoreDisplay.textContent = 'Score: 0';
-    games.heartCatcher.hearts = [];
+    let isActive = true;
     
-    // Show game section
-    gameSection.style.display = 'block';
-
     function updateScore() {
-        games.heartCatcher.score++;
-        scoreDisplay.textContent = `Score: ${games.heartCatcher.score}`;
+        score++;
+        scoreDisplay.textContent = `Score: ${score}`;
+        checkMilestones(score);
     }
 
     function createHeart() {
+        if (!isActive) return;
+
         const heart = document.createElement('div');
         heart.className = 'falling-heart';
         heart.innerHTML = '❤️';
         
-        // Random position
+        // Random position and size
         const randomX = Math.random() * (gameContainer.offsetWidth - 40);
+        const randomScale = 0.8 + Math.random() * 0.4;
         heart.style.left = randomX + 'px';
         heart.style.top = '-50px';
+        heart.style.transform = `scale(${randomScale})`;
         
         // Click handler
         heart.addEventListener('click', () => {
+            if (!isActive) return;
             updateScore();
             if (sounds.pop) sounds.pop.play();
             
             // Remove with animation
-            heart.style.transform = 'scale(1.5)';
+            heart.style.transform = `scale(${randomScale * 1.5})`;
             heart.style.opacity = '0';
             setTimeout(() => heart.remove(), 200);
         });
@@ -1040,12 +1128,19 @@ function startHeartCatcher() {
         
         // Animate falling
         let pos = -50;
-        const speed = 2;
+        const speed = 1 + Math.random() * 1.5;
+        let lastTime = performance.now();
         
-        function fall() {
-            if (!games.heartCatcher.active) return;
+        function fall(currentTime) {
+            if (!isActive) {
+                heart.remove();
+                return;
+            }
             
-            pos += speed;
+            const deltaTime = currentTime - lastTime;
+            lastTime = currentTime;
+            
+            pos += speed * (deltaTime / 16);
             heart.style.top = pos + 'px';
             
             if (pos < gameContainer.offsetHeight) {
@@ -1058,20 +1153,17 @@ function startHeartCatcher() {
         requestAnimationFrame(fall);
     }
 
-    // Create hearts every second
-    function spawnHeart() {
-        if (!games.heartCatcher.active) return;
-        createHeart();
-        setTimeout(spawnHeart, 1000);
-    }
-    
-    spawnHeart();
+    // Create hearts at a regular interval
+    const spawnInterval = setInterval(createHeart, 800);
 
     // Cleanup function
     return () => {
-        games.heartCatcher.active = false;
-        const hearts = document.querySelectorAll('.falling-heart');
+        isActive = false;
+        clearInterval(spawnInterval);
+        const hearts = gameContainer.querySelectorAll('.falling-heart');
         hearts.forEach(heart => heart.remove());
+        score = 0;
+        scoreDisplay.textContent = 'Score: 0';
     };
 }
 
@@ -1083,114 +1175,6 @@ function shuffleArray(array) {
     }
     return array;
 }
-
-// Mini-game functionality
-let gameActive = false;
-let score = 0;
-const player = document.getElementById('player');
-const gameSection = document.getElementById('gameSection');
-
-document.getElementById('startGame').addEventListener('click', () => {
-    const gameSection = document.getElementById('gameSection');
-    const quizSection = document.getElementById('quizSection');
-    
-    if (gameSection.style.display === 'none') {
-        gameSection.style.display = 'block';
-        quizSection.style.display = 'none'; // Hide quiz section if visible
-        
-        // Reset and initialize game state
-        score = 0;
-        document.getElementById('score').textContent = 'Score: 0';
-        gameActive = true;
-        
-        // Position player at center bottom
-        const gameContainer = document.querySelector('.game-container');
-        const player = document.getElementById('player');
-        player.style.left = (gameContainer.offsetWidth / 2 - player.offsetWidth / 2) + 'px';
-        
-        // Start the game
-        startGame();
-    } else {
-        gameSection.style.display = 'none';
-        // Reset game state when hiding
-        gameActive = false;
-        score = 0;
-        document.getElementById('score').textContent = 'Score: 0';
-        
-        // Clear any remaining hearts
-        const gameContainer = document.querySelector('.game-container');
-        const hearts = gameContainer.querySelectorAll('.falling-heart');
-        hearts.forEach(heart => heart.remove());
-    }
-});
-
-function startGame() {
-    if (!gameActive) return;
-
-    const gameContainer = document.querySelector('.game-container');
-    const heart = document.createElement('div');
-    heart.className = 'falling-heart';
-    heart.innerHTML = '❤️';
-    heart.style.left = Math.random() * (gameContainer.offsetWidth - 30) + 'px';
-    heart.style.top = '0px'; // Start from top
-    gameContainer.appendChild(heart);
-
-    // Animate heart falling
-    let position = 0;
-    const fallSpeed = 2;
-    const fallInterval = setInterval(() => {
-        if (!gameActive || !heart.parentElement) {
-            clearInterval(fallInterval);
-            return;
-        }
-        position += fallSpeed;
-        heart.style.top = position + 'px';
-        
-        // Remove heart if it goes off screen
-        if (position > gameContainer.offsetHeight) {
-            heart.remove();
-            clearInterval(fallInterval);
-        }
-    }, 16);
-
-    heart.addEventListener('click', () => {
-        score++;
-        document.getElementById('score').textContent = `Score: ${score}`;
-        heart.remove();
-        clearInterval(fallInterval);
-        sounds.pop.play();
-
-        // Add score animation
-        const scorePopup = document.createElement('div');
-        scorePopup.className = 'score-popup';
-        scorePopup.textContent = '+1';
-        scorePopup.style.left = heart.style.left;
-        scorePopup.style.top = heart.style.top;
-        gameContainer.appendChild(scorePopup);
-        setTimeout(() => scorePopup.remove(), 1000);
-    });
-
-    // Continue spawning hearts while game is active
-    if (gameActive) {
-        setTimeout(startGame, Math.random() * 1000 + 500);
-    }
-}
-
-// Handle player movement with keyboard
-document.addEventListener('keydown', (e) => {
-    if (!gameActive) return;
-    
-    const player = document.getElementById('player');
-    const gameContainer = document.querySelector('.game-container');
-    const step = 10;
-    const currentLeft = parseInt(player.style.left) || 0;
-    
-    if (e.key === 'ArrowLeft' && currentLeft > 0) {
-        player.style.left = Math.max(0, currentLeft - step) + 'px';
-    } else if (e.key === 'ArrowRight' && currentLeft < gameContainer.offsetWidth - player.offsetWidth) {
-        player.style.left = Math.min(gameContainer.offsetWidth - player.offsetWidth, currentLeft + step) + 'px';
-    }
-});
 
 // Quiz functionality
 let currentQuestion = 0;
@@ -1718,6 +1702,169 @@ style.textContent = `
         50% {
             transform: scale(1.2);
         }
+    }
+
+    .milestone-message {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(255, 255, 255, 0.9);
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        font-size: 24px;
+        text-align: center;
+        animation: popIn 0.5s ease-out;
+    }
+
+    @keyframes popIn {
+        0% { transform: translate(-50%, -50%) scale(0); }
+        70% { transform: translate(-50%, -50%) scale(1.1); }
+        100% { transform: translate(-50%, -50%) scale(1); }
+    }
+
+    .screen-shake {
+        animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+    }
+
+    @keyframes shake {
+        10%, 90% { transform: translate3d(-1px, 0, 0); }
+        20%, 80% { transform: translate3d(2px, 0, 0); }
+        30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+        40%, 60% { transform: translate3d(4px, 0, 0); }
+) rotate(360deg) scale(0.5);
+            opacity: 0;
+        }
+    }
+
+    @keyframes superBadgePop {
+        0% {
+            transform: scale(0) rotate(-180deg);
+        }
+        60% {
+            transform: scale(1.2) rotate(10deg);
+        }
+        100% {
+            transform: scale(1) rotate(0deg);
+        }
+    }
+
+    .respect-badge {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        background: linear-gradient(45deg, #FFD700, #FFA500);
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.9em;
+        color: white;
+        box-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
+        animation: badgeGlow 2s ease-in-out infinite;
+    }
+
+    @keyframes badgeGlow {
+        0%, 100% {
+            box-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
+        }
+        50% {
+            box-shadow: 0 2px 20px rgba(255, 215, 0, 0.6);
+        }
+    }
+
+    .transformation-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
+        margin: 20px 0;
+        font-size: 2em;
+    }
+
+    .bad-boy-outfit {
+        animation: fadeOutRotate 2s ease-in-out forwards;
+    }
+
+    .transform-arrow {
+        animation: pulse 1s ease-in-out infinite;
+    }
+
+    .soft-boy {
+        opacity: 0;
+        animation: fadeInRotate 2s ease-in-out 1s forwards;
+    }
+
+    .transforming-symbol {
+        transition: transform 0.5s ease-in-out, filter 0.5s ease-in-out;
+    }
+
+    .transforming-symbol.transform-active {
+        transform: scale(1.2) rotate(360deg);
+        filter: hue-rotate(180deg);
+    }
+
+    @keyframes fadeOutRotate {
+        0% {
+            opacity: 1;
+            transform: rotate(0deg);
+        }
+        100% {
+            opacity: 0.3;
+            transform: rotate(-180deg);
+        }
+    }
+
+    @keyframes fadeInRotate {
+        0% {
+            opacity: 0;
+            transform: rotate(180deg);
+        }
+        100% {
+            opacity: 1;
+            transform: rotate(0deg);
+        }
+    }
+
+    @keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.2);
+        }
+    }
+
+    .milestone-message {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(255, 255, 255, 0.9);
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        font-size: 24px;
+        text-align: center;
+        animation: popIn 0.5s ease-out;
+    }
+
+    @keyframes popIn {
+        0% { transform: translate(-50%, -50%) scale(0); }
+        70% { transform: translate(-50%, -50%) scale(1.1); }
+        100% { transform: translate(-50%, -50%) scale(1); }
+    }
+
+    .screen-shake {
+        animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+    }
+
+    @keyframes shake {
+        10%, 90% { transform: translate3d(-1px, 0, 0); }
+        20%, 80% { transform: translate3d(2px, 0, 0); }
+        30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+        40%, 60% { transform: translate3d(4px, 0, 0); }
     }
 `;
 document.head.appendChild(style);

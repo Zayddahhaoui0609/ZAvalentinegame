@@ -3,31 +3,46 @@ const sounds = {
     pop: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-modern-technology-select-3124.mp3')
 };
 
-// Music playlist with relative paths
+// Music playlist with direct URLs
 const musicPlaylist = [
-    "Music/Bill Withers  - Just The Two Of Us (Lyrics).mp3",
-    "Music/Joji -  Glimpse of Us.mp3",
-    "Music/Joji - Like You Do.mp3",
-    "Music/Lady Gaga, Bruno Mars - Die With A Smile (Official Music Video).mp3",
-    "Music/Rex Orange County - Loving is Easy (feat. Benny Sings) [Official Video].mp3",
-    "Music/SZA - Snooze (Official Video).mp3",
-    "Music/SZA - The Weekend (Official Audio).mp3",
-    "Music/Stephen Sanchez - Until I Found You (Official Music Video).mp3",
-    "Music/The Weeknd - Die For You (Official Music Video).mp3",
-    "Music/d4vd - Here With Me [Official Music Video].mp3",
-    "Music/d4vd - Romantic Homicide.mp3"
+    "https://dl.dropboxusercontent.com/scl/fi/your-file-id/Bill%20Withers%20-%20Just%20The%20Two%20Of%20Us.mp3",
+    "https://dl.dropboxusercontent.com/scl/fi/your-file-id/Joji%20-%20Glimpse%20of%20Us.mp3",
+    "https://dl.dropboxusercontent.com/scl/fi/your-file-id/Joji%20-%20Like%20You%20Do.mp3",
+    "https://dl.dropboxusercontent.com/scl/fi/your-file-id/Lady%20Gaga%2C%20Bruno%20Mars%20-%20Die%20With%20A%20Smile.mp3",
+    "https://dl.dropboxusercontent.com/scl/fi/your-file-id/Rex%20Orange%20County%20-%20Loving%20is%20Easy.mp3",
+    "https://dl.dropboxusercontent.com/scl/fi/your-file-id/SZA%20-%20Snooze.mp3",
+    "https://dl.dropboxusercontent.com/scl/fi/your-file-id/SZA%20-%20The%20Weekend.mp3",
+    "https://dl.dropboxusercontent.com/scl/fi/your-file-id/Stephen%20Sanchez%20-%20Until%20I%20Found%20You.mp3",
+    "https://dl.dropboxusercontent.com/scl/fi/your-file-id/The%20Weeknd%20-%20Die%20For%20You.mp3",
+    "https://dl.dropboxusercontent.com/scl/fi/your-file-id/d4vd%20-%20Here%20With%20Me.mp3",
+    "https://dl.dropboxusercontent.com/scl/fi/your-file-id/d4vd%20-%20Romantic%20Homicide.mp3"
 ];
 
 let currentMusicIndex = 0;
 let currentMusic = null;
 let isMusicPlaying = false;
 
-// Function to encode file path
-function encodeFilePath(path) {
-    return path.split('/').map(part => encodeURIComponent(part)).join('/');
+// Function to get song name from URL
+function getSongName(url) {
+    return decodeURIComponent(url.split('/').pop().replace('.mp3', ''));
 }
 
-// Function to play a song with error handling
+// Function to update the current song display
+function updateCurrentSongDisplay() {
+    const songName = getSongName(musicPlaylist[currentMusicIndex]);
+    document.getElementById('currentSong').textContent = songName;
+}
+
+// Function to update progress bar
+function updateProgressBar() {
+    if (currentMusic && !currentMusic.paused) {
+        const progress = (currentMusic.currentTime / currentMusic.duration) * 100;
+        document.getElementById('progressBar').style.width = progress + '%';
+        requestAnimationFrame(updateProgressBar);
+    }
+}
+
+// Function to play a song
 function playSong() {
     if (currentMusic) {
         currentMusic.pause();
@@ -35,45 +50,30 @@ function playSong() {
     }
 
     const song = musicPlaylist[currentMusicIndex];
-    const encodedSong = encodeFilePath(song);
-    console.log('Attempting to play:', encodedSong); // Debug log
+    console.log('Attempting to play:', song);
 
-    // First, check if the file exists
-    fetch(encodedSong)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            // File exists, now create and play the Audio
-            currentMusic = new Audio(encodedSong);
-            currentMusic.addEventListener('loadeddata', () => {
-                currentMusic.play()
-                    .then(() => {
-                        isMusicPlaying = true;
-                        document.getElementById('playBtn').textContent = '⏸️';
-                        updateCurrentSongDisplay();
-                        updateProgressBar();
-                    })
-                    .catch(error => {
-                        console.error('Error playing song:', error);
-                        document.getElementById('currentSong').textContent = 'Error playing song: ' + song.split('/').pop();
-                        setTimeout(playNextSong, 2000);
-                    });
-            });
-
-            currentMusic.addEventListener('error', () => {
-                console.error('Error loading song:', encodedSong);
-                document.getElementById('currentSong').textContent = 'Error loading song: ' + song.split('/').pop();
+    currentMusic = new Audio(song);
+    
+    currentMusic.addEventListener('loadeddata', () => {
+        currentMusic.play()
+            .then(() => {
+                isMusicPlaying = true;
+                document.getElementById('playBtn').textContent = '⏸️';
+                updateCurrentSongDisplay();
+                updateProgressBar();
+            })
+            .catch(error => {
+                console.error('Error playing song:', error);
                 setTimeout(playNextSong, 2000);
             });
+    });
 
-            currentMusic.addEventListener('ended', playNextSong);
-        })
-        .catch(error => {
-            console.error('Error checking song:', error);
-            document.getElementById('currentSong').textContent = 'Error loading song: ' + song.split('/').pop();
-            setTimeout(playNextSong, 2000);
-        });
+    currentMusic.addEventListener('error', () => {
+        console.error('Error loading song:', song);
+        setTimeout(playNextSong, 2000);
+    });
+
+    currentMusic.addEventListener('ended', playNextSong);
 }
 
 // Initialize music player
@@ -95,7 +95,7 @@ function initMusicPlayer() {
             <select class="music-dropdown" aria-label="Select song">
                 <option value="">Choose a song ♫</option>
                 ${musicPlaylist.map((song, index) => `
-                    <option value="${index}">${song.split('/').pop().replace('.mp3', '')}</option>
+                    <option value="${index}">${getSongName(song)}</option>
                 `).join('')}
             </select>
         </div>
@@ -141,21 +141,6 @@ function formatTime(secs) {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
-function updateProgressBar() {
-    if (currentMusic) {
-        const progress = document.querySelector('.progress-bar');
-        const currentTime = document.getElementById('currentTime');
-        const totalTime = document.getElementById('totalTime');
-        
-        const percent = (currentMusic.currentTime / currentMusic.duration) * 100;
-        progress.style.width = percent + '%';
-        
-        currentTime.textContent = formatTime(currentMusic.currentTime);
-        totalTime.textContent = formatTime(currentMusic.duration);
-        requestAnimationFrame(updateProgressBar);
-    }
-}
-
 function toggleMusic() {
     if (!currentMusic) {
         playSong();
@@ -180,16 +165,6 @@ function playNextSong() {
 function playPreviousSong() {
     currentMusicIndex = (currentMusicIndex - 1 + musicPlaylist.length) % musicPlaylist.length;
     playSong();
-}
-
-function updateCurrentSongDisplay() {
-    const songName = musicPlaylist[currentMusicIndex].split('/').pop().replace('.mp3', '');
-    document.getElementById('currentSong').textContent = songName;
-    // Update dropdown selection
-    const dropdown = document.querySelector('.music-dropdown');
-    if (dropdown) {
-        dropdown.value = currentMusicIndex;
-    }
 }
 
 // Funny Valentine messages template

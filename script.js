@@ -3,7 +3,7 @@ const sounds = {
     pop: new Howl({ src: ['https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3'] })
 };
 
-// Music playlist
+// Music playlist with absolute paths
 const musicPlaylist = [
     "/Music/Bill Withers  - Just The Two Of Us (Lyrics).mp3",
     "/Music/Joji -  Glimpse of Us.mp3",
@@ -117,35 +117,47 @@ function toggleMusic() {
     updateCurrentSongDisplay();
 }
 
+// Function to play a song with error handling
 function playSong() {
     if (currentMusic) {
         currentMusic.unload();
     }
-    
+
+    const song = musicPlaylist[currentMusicIndex];
+    console.log('Attempting to play:', song); // Debug log
+
     currentMusic = new Howl({
-        src: [musicPlaylist[currentMusicIndex]],
+        src: [song],
         html5: true,
         format: ['mp3'],
-        onend: () => {
-            playNextSong();
-        },
-        onplay: () => {
+        onplay: function() {
             isMusicPlaying = true;
             document.getElementById('playBtn').textContent = '⏸️';
             updateCurrentSongDisplay();
-            // Start progress update interval
-            setInterval(updateProgressBar, 100);
         },
-        onload: () => {
-            updateProgressBar();
+        onpause: function() {
+            isMusicPlaying = false;
+            document.getElementById('playBtn').textContent = '▶️';
         },
-        onseek: () => {
-            updateProgressBar();
+        onend: function() {
+            playNextSong();
+        },
+        onloaderror: function(id, err) {
+            console.error('Error loading song:', song, err);
+            document.getElementById('currentSong').textContent = 'Error loading song: ' + song.split('/').pop();
+        },
+        onplayerror: function(id, err) {
+            console.error('Error playing song:', song, err);
+            document.getElementById('currentSong').textContent = 'Error playing song: ' + song.split('/').pop();
         }
     });
-    
-    currentMusic.play();
-    isMusicPlaying = true;
+
+    try {
+        currentMusic.play();
+        updateProgressBar();
+    } catch (error) {
+        console.error('Error in playSong:', error);
+    }
 }
 
 function playNextSong() {
@@ -626,7 +638,7 @@ document.getElementById('surpriseBtn').addEventListener('click', () => {
     }
     
     // Easter egg for Sophia/Sofia/Sofie
-    const sophiaVariants = ['sophia', 'sofia', 'sofie','sophie','sofie'];
+    const sophiaVariants = ['sophia', 'sofia', 'sofie','sofie'];
     if (sophiaVariants.includes(name.toLowerCase()) && !sophiaMessageShown) {
         messageArea.innerHTML = `<div class="special-message">
             <div class="easter-egg-badge">🎉 You found an easter egg! 🎉</div>
@@ -1653,7 +1665,7 @@ style.textContent = `
         background: linear-gradient(45deg, #FFD700, #FFA500);
         padding: 5px 15px;
         border-radius: 20px;
-        font-size: 1em;
+        font-size: 0.9em;
         color: white;
         box-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
         animation: badgeGlow 2s ease-in-out infinite;

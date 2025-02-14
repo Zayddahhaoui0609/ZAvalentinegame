@@ -1,7 +1,7 @@
 {
   "version": 2,
+  "public": true,
   "rewrites": [
-    { "source": "/Music/(.*)", "destination": "/Music/$1" },
     { "source": "/(.*)", "destination": "/$1" }
   ],
   "headers": [
@@ -15,6 +15,10 @@
         {
           "key": "Content-Type",
           "value": "audio/mpeg"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
         }
       ]
     }
